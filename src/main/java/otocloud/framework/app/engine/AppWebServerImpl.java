@@ -26,6 +26,7 @@ import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.PermittedOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 
+import java.awt.RenderingHints.Key;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -145,8 +146,20 @@ public abstract class AppWebServerImpl implements WebServer {
 				
 			};*/			
 			restRoutes = new HashMap<Route,RestActionDescriptor>();
-			actions.forEach((key, restActionDesc)  -> {				
-				Route route = router.route(restActionDesc.getActionURI().getHttpMethod(), restActionDesc.getActionURI().getUri());
+			actions.forEach((address, restActionDesc)  -> {		
+				HttpMethod httpMethod = restActionDesc.getActionURI().getHttpMethod();
+				//String apiUrl = restActionDesc.getActionURI().getUri();
+				
+				String restApiURI = restActionDesc.getActionURI().getUri();
+				if(restApiURI.isEmpty()){
+					restApiURI = "/" + appId + "/" + restActionDesc.getActivityName();
+				}else{
+					restApiURI = "/" + appId + "/" + restActionDesc.getActivityName() + "/" + restApiURI;
+				}
+				
+				Route route = router.route(httpMethod, restApiURI);
+				this.logger.info("注册 address:" + address + " -> url:" + restApiURI + ", http-method:" + httpMethod.toString());
+				
 				restRoutes.put(route, restActionDesc);
 				route.handler(this::restRouteHandle);
 			});
@@ -158,12 +171,17 @@ public abstract class AppWebServerImpl implements WebServer {
 				List<ActionDescriptor> actionDescs = activityDesc.getActionsDesc();
 				if(actionDescs != null && actionDescs.size() > 0){
 					actionDescs.forEach(actionDesc -> {
-						if(actionDesc.getHandlerDescriptor().getRestApiURI() != null){
+						if(actionDesc.getHandlerDescriptor().getRestApiURI() != null){							
 							RestActionDescriptor restActionDesc = new RestActionDescriptor(actionDesc);	
+							restActionDesc.setActivityName(activityDesc.getActivityName());
 							String addressString = restActionDesc.getActonDesc().getHandlerDescriptor().getHandlerAddress().getEventAddress();
 							if(actionUrlsMap != null && actionUrlsMap.containsKey(addressString)){
 								restActionDesc.setActionURI(actionUrlsMap.get(addressString));
 								actions.put(addressString, restActionDesc);
+							}else{
+								ActionURI actUrl = actionDesc.getHandlerDescriptor().getRestApiURI();
+								restActionDesc.setActionURI(actUrl);
+								actions.put(addressString, restActionDesc);							
 							}
 						}
 					});
@@ -513,7 +531,12 @@ public abstract class AppWebServerImpl implements WebServer {
 		}
 		
 		server = vertx.createHttpServer();		
-		server.requestHandler(router::accept).listen(cfg.getInteger(OtoConfiguration.WEBSERVER_PORT));
+		
+		int lstPort = cfg.getInteger(OtoConfiguration.WEBSERVER_PORT);
+		server.requestHandler(router::accept).listen(lstPort);
+		
+		logger.info("内部 webserver启动,监听端口:" + lstPort);
+		
 	}
 
 	@Override

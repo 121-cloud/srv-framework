@@ -81,8 +81,12 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 
 		if(isWebServerHost()){
 			webServer = (AppWebServerImpl)createWebServer();
-			if(webServer != null){																							
-				webServer.init(getRealServiceName(), null, vertx, srvCfg.getJsonObject(OtoConfiguration.WEBSERVER_CFG), null);
+			if(webServer != null){	
+				Vertx  webSrvHostVertx = vertx;
+				if(webSrvHostVertx == null){
+					webSrvHostVertx = this.vertxInstance;
+				}
+				webServer.init(getRealServiceName(), null, webSrvHostVertx, srvCfg.getJsonObject(OtoConfiguration.WEBSERVER_CFG), null);
 			}
 		}	
 		

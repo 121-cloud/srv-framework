@@ -5,6 +5,7 @@ package otocloud.framework.app.engine;
 
 import otocloud.common.ActionURI;
 import otocloud.framework.app.function.ActionDescriptor;
+import otocloud.framework.app.function.ActivityThread;
 
 /**
  * TODO: DOCUMENT ME!
@@ -12,7 +13,16 @@ import otocloud.framework.app.function.ActionDescriptor;
  * @author lijing@yonyou.com
  */
 public class RestActionDescriptor {
+	private String ActivityName;
 	private ActionURI actionRUI;
+	private ActionDescriptor actionDesc;
+	
+	public String getActivityName() {
+		return ActivityName;
+	}
+	public void setActivityName(String activityName) {
+		ActivityName = activityName;
+	}
 	
 	/**
 	 * @return the actionRUI
@@ -27,8 +37,7 @@ public class RestActionDescriptor {
 		this.actionRUI = actionRUI;
 	}
 
-	private ActionDescriptor actionDesc;
-	
+
 	/**
 	 * @return the actionDesc
 	 */
@@ -44,6 +53,7 @@ public class RestActionDescriptor {
 	
 	//构造
 	public RestActionDescriptor(ActionURI actionRUI, ActionDescriptor actionDesc) {
+		setActionURI(actionRUI);
 		setActionDesc(actionDesc);		
 	}
 	
