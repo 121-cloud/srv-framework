@@ -9,6 +9,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -57,22 +58,34 @@ public class OtoCloudBusMessageImpl<T> implements OtoCloudBusMessage<T> {
 			}		
 		}
 	}
+	
+	private Object wrapMessage(Object message){
+    	if(message instanceof JsonObject){
+    		return message;
+    	}else if(message instanceof JsonArray){
+    		return message;
+    	}else{
+    		JsonObject ret = new JsonObject();
+    		ret.put("result", message);
+    		return ret;
+    	}
+	}
 
 	  @Override
 	  public void reply(Object message) {
 		  if(asyncReply){
-			  reply(message, new DeliveryOptions(), null);
+			  reply(wrapMessage(message), new DeliveryOptions(), null);
 		  }else{
-			  eventMessage.reply(message);
+			  eventMessage.reply(wrapMessage(message));
 		  }
 	  }
 
 	  @Override
 	  public <R> void reply(Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
 		  if(asyncReply)
-			  reply(message, new DeliveryOptions(), replyHandler);
+			  reply(wrapMessage(message), new DeliveryOptions(), replyHandler);
 		  else{
-			  eventMessage.reply(message, new DeliveryOptions(), replyHandler);
+			  eventMessage.reply(wrapMessage(message), new DeliveryOptions(), replyHandler);
 		  }
 	  }
 
@@ -81,7 +94,7 @@ public class OtoCloudBusMessageImpl<T> implements OtoCloudBusMessage<T> {
 		  if(asyncReply)
 			  reply(message, options, null);
 		  else{
-			  eventMessage.reply(message, options, null);
+			  eventMessage.reply(wrapMessage(message), options, null);
 		  }
 	  }
 
@@ -94,7 +107,7 @@ public class OtoCloudBusMessageImpl<T> implements OtoCloudBusMessage<T> {
 			  bus.<R> send(replyAddress, message, options, replyHandler);
 		  }
 		  else{
-			  eventMessage.reply(message, options, replyHandler);
+			  eventMessage.reply(wrapMessage(message), options, replyHandler);
 		  }
 	  }  
 

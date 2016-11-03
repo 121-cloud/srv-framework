@@ -26,7 +26,6 @@ import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.PermittedOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 
-import java.awt.RenderingHints.Key;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -270,6 +269,8 @@ public abstract class AppWebServerImpl implements WebServer {
 		            		response.end(((JsonObject)retObject).encode());
 		            	}else if(retObject instanceof JsonArray){
 		            		response.end(((JsonArray)retObject).encode());
+		            	}else{
+		            		response.end(retObject.toString());
 		            	}
 	            	}
 	            } else {
@@ -294,6 +295,8 @@ public abstract class AppWebServerImpl implements WebServer {
 		            		response.end(((JsonObject)retObject).encode());
 		            	}else if(retObject instanceof JsonArray){
 		            		response.end(((JsonArray)retObject).encode());
+		            	}else{
+		            		response.end(retObject.toString());
 		            	}
 	            	}
 	            } else {
@@ -317,6 +320,8 @@ public abstract class AppWebServerImpl implements WebServer {
 		            		response.end(((JsonObject)retObject).encode());
 		            	}else if(retObject instanceof JsonArray){
 		            		response.end(((JsonArray)retObject).encode());
+		            	}else{
+		            		response.end(retObject.toString());
 		            	}
 	            	}
 	            } else {
