@@ -458,44 +458,51 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 			  querySql = "SELECT org_acct_id,biz_role_id FROM view_org_acct_app_inst WHERE code=? AND app_version_id=? and " + condition;
 		  }
 		  
-		  JDBCClient sqlClient = this.getSysDatasource().getSqlClient();
+		  try{
 		  
-		  sqlClient.getConnection(connRes -> {
-				if (connRes.succeeded()) {
-					final SQLConnection conn = connRes.result();				
-					conn.setAutoCommit(true, res ->{
-					  if (res.failed()) {
-						  closeDBConnect(conn);
-		  	    		  Throwable err = res.cause();
-		  	    		  String replyMsg = err.getMessage();
-		  	    		  getLogger().error(replyMsg, err);
-		  	    		  retFuture.fail(err);
-					  }else{										
-						conn.queryWithParams(querySql, new JsonArray().add(this.getRealServiceName())
-								.add(srvCfg.getInteger(AppConfiguration.APP_VERSION_ID_KEY, -1)),
-						  appSubRet->{								  
-							  if (appSubRet.succeeded()) {
-								  ResultSet result = appSubRet.result();
-								  retFuture.complete(result.getRows());
-							  }else{
-				  	    		  Throwable err = appSubRet.cause();
-				  	    		  String replyMsg = err.getMessage();
-				  	    		  getLogger().error(replyMsg, err);
-				  	    		  retFuture.fail(err);
-							  }
+			  JDBCClient sqlClient = this.getSysDatasource().getSqlClient();
+			  
+			  sqlClient.getConnection(connRes -> {
+					if (connRes.succeeded()) {
+						final SQLConnection conn = connRes.result();				
+						conn.setAutoCommit(true, res ->{
+						  if (res.failed()) {
 							  closeDBConnect(conn);
-						  });
+			  	    		  Throwable err = res.cause();
+			  	    		  String replyMsg = err.getMessage();
+			  	    		  getLogger().error(replyMsg, err);
+			  	    		  retFuture.fail(err);
+						  }else{										
+							conn.queryWithParams(querySql, new JsonArray().add(this.getRealServiceName())
+									.add(srvCfg.getInteger(AppConfiguration.APP_VERSION_ID_KEY, -1)),
+							  appSubRet->{								  
+								  if (appSubRet.succeeded()) {
+									  ResultSet result = appSubRet.result();
+									  retFuture.complete(result.getRows());
+								  }else{
+					  	    		  Throwable err = appSubRet.cause();
+					  	    		  String replyMsg = err.getMessage();
+					  	    		  getLogger().error(replyMsg, err);
+					  	    		  retFuture.fail(err);
+								  }
+								  closeDBConnect(conn);
+							  });
+						}
+					});
+	
+				}else{
+		    		  Throwable err = connRes.cause();
+		    		  String replyMsg = err.getMessage();
+		    		  getLogger().error(replyMsg, err);
+		    		  retFuture.fail(err);
 					}
 				});
-
-			}else{
-	    		  Throwable err = connRes.cause();
-	    		  String replyMsg = err.getMessage();
-	    		  getLogger().error(replyMsg, err);
-	    		  retFuture.fail(err);
-				}
-			});
-		  
+			  
+		  }catch(Exception ex){
+    		  String replyMsg = ex.getMessage();
+    		  getLogger().error(replyMsg, ex);
+    		  retFuture.fail(ex);
+		  }		  
 
 	}
 
