@@ -310,9 +310,9 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 				                }
 				            ]
 				        }*/
-				    	if(factData.containsKey("biz_thread")){
+/*				    	if(factData.containsKey("biz_thread")){
 				    		insert.put("biz_thread", factData.getJsonObject("biz_thread").copy());				    		
-				    	}
+				    	}*/
 				    	
 				    	insert.put("ts", getDate());
 				    	mongoClient.insert(getBoLatestTableName(bizObjectType), insert, result -> {

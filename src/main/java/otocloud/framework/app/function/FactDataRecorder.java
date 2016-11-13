@@ -15,7 +15,7 @@ import io.vertx.core.json.JsonObject;
 
 
 /**
- * TODO: DOCUMENT ME!
+ * TODO: 事实数据记录器
  * @date 2015年6月12日
  * @author lijing@yonyou.com
  */

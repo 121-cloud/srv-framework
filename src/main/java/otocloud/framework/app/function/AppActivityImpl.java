@@ -8,12 +8,11 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.app.common.AppInstanceContext;
 import otocloud.framework.app.engine.AppService;
@@ -265,6 +264,12 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
 	}
 	
 	//开始根业务
+/*	{
+	    "_id" : ObjectId("55f683c7c9bb0dffc13f79bf"),
+	    "root_bo_type" : "po",
+	    "root_bo_id" : "PO001",
+	    "root_status" : 1
+	}*/
 	public void bizRootStart(String rootObjectType, String rootObjectId, Handler<AsyncResult<Void>> next){
     	MongoClient mongoClient = getAppDatasource().getMongoClient();	  	
  		
@@ -276,7 +281,7 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
 		JsonObject bizRootData = new JsonObject();
 		bizRootData.put("root_bo_type", rootObjectType);
 		bizRootData.put("root_bo_id", rootObjectId);
-		bizRootData.put("biz_status", 1);
+		bizRootData.put("root_status", 1);
 		bizRootData.put("account", account);
 	    mongoClient.insert(getBizRootTableName(), bizRootData, res -> {
 			  if (res.succeeded()) {
@@ -298,15 +303,15 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
 		Future<Void> ret = Future.future();
 		ret.setHandler(next);
 		
- 		//String account = this.getAppInstContext().getAccount(); 
+		String account = this.getAppInstContext().getAccount(); 
     		
 		JsonObject query = new JsonObject();
 		query.put("root_bo_type", rootObjectType);
 		query.put("root_bo_id", rootObjectId);
-//		query.put("account", account);
+		query.put("account", account);
 		
 		JsonObject updateData = new JsonObject();
-		updateData.put("biz_status", 2);		
+		updateData.put("root_status", 2);		
 		
 	    mongoClient.updateCollection(getBizRootTableName(), query, updateData, res -> {
 			  if (res.succeeded()) {
@@ -322,8 +327,8 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
 	}
 	
 	//记录业务活动开始
-	public void bizActivityStart(String rootObjectType, String rootObjectId, List<ActivityThread> previousActivities,
-			ActivityThread currentActivity, Handler<AsyncResult<Void>> next){
+	public void bizActivityStart(String rootObjectType, String rootObjectId, JsonArray previousActivities,
+			String currentBoId,	Handler<AsyncResult<Void>> next){
 		
     	MongoClient mongoClient = getAppDatasource().getMongoClient(); 	  	
  		
@@ -338,14 +343,15 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
 		bizActivityData.put("account", account);
 		
 		if(previousActivities != null && previousActivities.size() > 0){
-			JsonArray prevActivitiesObj = new JsonArray();
-			previousActivities.forEach(previousActivity->{
-				prevActivitiesObj.add(previousActivity.toJsonObject());				
-			});
-			bizActivityData.put("previous_activities", prevActivitiesObj);
+			bizActivityData.put("previous_activities", previousActivities);
 		}
 		
-		bizActivityData.put("current_activity", currentActivity.toJsonObject());
+		JsonObject currentActivity = new JsonObject();
+		currentActivity.put("activity", this.getName());
+		bizActivityData.put("bo_type", this.getBizObjectType());
+		bizActivityData.put("bo_id", currentBoId);
+		
+		bizActivityData.put("current_activity", currentActivity);
 		bizActivityData.put("current_activity_status", 1);
 		
 		
@@ -360,77 +366,25 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
 			  }	
 			});
  
-	}
-	
-	
-	//记录业务活动开始
-	public void bizActivityStart(String rootObjectType, String rootObjectId, JsonObject bizThread,
-			ActivityThread currentActivity, Handler<AsyncResult<Void>> next){
-		
-    	MongoClient mongoClient = getAppDatasource().getMongoClient(); 		
-
-    	if(bizThread.containsKey("previous_bo")){
-    		JsonArray prevBos = bizThread.getJsonArray("previous_bo");
-    		int size = prevBos.size();
-    		if(size > 0){
-    			List<ActivityThread> previousActivities = new ArrayList<ActivityThread>();
-    			AtomicInteger runningCount = new AtomicInteger(0);    			
-    			prevBos.forEach(prevBo->{
-    				
-    				String bizObjectType = ((JsonObject)prevBo).getString("bo_type");
-    				String bizObjectId = ((JsonObject)prevBo).getString("bo_id");
-    				
-    				JsonObject query = new JsonObject();
-    				query.put("root_bo_type", rootObjectType);
-    				query.put("root_bo_id", rootObjectId);
-    				query.put("current_activity.bo_type", bizObjectType);
-    				query.put("current_activity.bo_id", bizObjectId);
-    				
-    				JsonObject fields = new JsonObject();
-    				fields.put("current_activity.activity", 1);
-    				
-    			    mongoClient.findOne(getBizThreadTableName(), query, fields, res -> {
-    					  if (res.succeeded()) {
-    						  JsonObject actObj = res.result().getJsonObject("current_activity");
-    						  ActivityThread actThread = new ActivityThread(actObj.getString("activity"), bizObjectType, bizObjectId);
-    						  previousActivities.add(actThread);
-    					  } else {
-    			    		  Throwable err = res.cause();
-    			    		  String replyMsg = err.getMessage();
-    			    		  getLogger().error(replyMsg, err);    	    
-    			    		  //ret.fail(err);
-    					  }	
-			       		  if (runningCount.incrementAndGet() >= size) {
-			       			  
-			       			bizActivityStart(rootObjectType, rootObjectId, previousActivities,
-			       					 currentActivity, next);
-			       			
-			              }    					  
-    					});
-    				
-    				
-    			});    			
-    		}    		
-    	}
-    	
-    	
-	}
+	}	
 	
 	
 	//记录业务活动完成
-	public void bizActivityEnd(String rootObjectType, String rootObjectId, String currentActivityId, Handler<AsyncResult<Void>> next){
+	public void bizActivityEnd(String rootObjectType, String rootObjectId, String currentBoId, Handler<AsyncResult<Void>> next){
 		
     	MongoClient mongoClient = getAppDatasource().getMongoClient();  	
  		
 		Future<Void> ret = Future.future();
 		ret.setHandler(next);
 		
- 		//String account = this.getAppInstContext().getAccount(); 
+ 		String account = this.getAppInstContext().getAccount(); 
     		
 		JsonObject query = new JsonObject();
 		query.put("root_bo_type", rootObjectType);
 		query.put("root_bo_id", rootObjectId);
-		query.put("current_activity.activity", currentActivityId);
+		query.put("current_activity.activity", this.getName());
+		query.put("current_activity.bo_id", currentBoId);
+		query.put("account", account);
 		
 		JsonObject updateData = new JsonObject();
 		updateData.put("current_activity_status", 2);
@@ -460,7 +414,7 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
 		JsonObject query = new JsonObject();
 		query.put("root_bo_type", rootObjectType);
 		query.put("root_bo_id", rootObjectId);
-		query.put("current_activity.activity", 1);		
+		query.put("current_activity_status", 1);
 		
 	    mongoClient.find(getBizThreadTableName(), query, res -> {
 			  if (res.succeeded()) {				  
@@ -483,6 +437,42 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
 			});		
 		
 	}
+	
+	//向下跟踪子业务线索
+    public void trackBizThreadForBoId(String boId, Handler<AsyncResult<List<JsonObject>>> result){
+    
+   		MongoClient mongoClient = getAppDatasource().getMongoClient();  	
+	
+		Future<List<JsonObject>> ret = Future.future();
+		ret.setHandler(result);
+		
+ 		String account = this.getAppInstContext().getAccount(); 
+		
+		JsonObject query = new JsonObject();
+  		query.put("previous_activities.activity", this.getName());
+ 		query.put("previous_activities.bo_type", this.getBizObjectType());
+		query.put("previous_activities.bo_id", boId);
+		query.put("account", account);
+		
+		FindOptions options = new FindOptions();
+		options.setFields(new JsonObject().put("current_activity.activity", 1)
+				.put("current_activity.bo_type", 1).put("current_activity.bo_id", 1));    		
+		
+	    mongoClient.findWithOptions(getBizThreadTableName(), query, options, res -> {
+		  if (res.succeeded()) {				  
+			  List<JsonObject> nextActivities = res.result(); 
+			  ret.complete(nextActivities);
+		  } else {
+    		  Throwable err = res.cause();
+    		  String replyMsg = err.getMessage();
+    		  getLogger().error(replyMsg, err);    	    
+    		  ret.fail(err);
+		  }	
+		});	
+    	
+    	
+    }
+	
 	
 	public String getDBTableName(String tableName){
 		String account = getAppInstContext().getAccount();	
