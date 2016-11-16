@@ -581,6 +581,35 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		
 	}
 	
+	//批量查询业务对象
+	public void queryBizDataList(String bizObjectType, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
+		String account = this.appActivity.getAppInstContext().getAccount();		
+		pagingOptions.queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, pagingOptions.queryCond);
+		
+		Future<List<JsonObject>> ret = Future.future();
+		ret.setHandler(next);
+		
+		//MongoClient mongoClient = getCurrentDataSource().getMongoClient();
+		MongoClient mongoCliTemp = mongoCli;
+		if(mongoCli == null)
+			mongoCliTemp = getCurrentDataSource().getMongoClient();		
+		MongoClient mongoClient = mongoCliTemp;
+
+		mongoClient.findWithOptions(this.getDBTableName(bizObjectType), 
+				pagingOptions.queryCond, pagingOptions.findOptions, findRet->{
+					if (findRet.succeeded()) {															
+						ret.complete(findRet.result());
+					} else {
+						Throwable err = findRet.cause();
+						String errMsg = err.getMessage();
+						appActivity.getLogger().error(errMsg, err);
+						ret.fail(err);
+					}
+					
+				});		
+		
+	}
+	
 	@Override
 	public void queryFactDataList(String bizObjectType, String boStatus, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
 		String account = this.appActivity.getAppInstContext().getAccount();		
