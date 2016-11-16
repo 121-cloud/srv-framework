@@ -63,4 +63,13 @@ public class PagingOptions {
 		return new PagingOptions(findQuery, findOptions);
 
 	}
+	
+	public static PagingOptions buildPagingOptions(JsonObject pagingWrapper){
+		
+		JsonObject fields = pagingWrapper.getJsonObject("fields");		
+		JsonObject queryCond = pagingWrapper.getJsonObject("query");
+		JsonObject pagingInfo = pagingWrapper.getJsonObject("paging");
+		
+		return buildPagingOptions(fields, pagingInfo, queryCond);
+	}
 }
