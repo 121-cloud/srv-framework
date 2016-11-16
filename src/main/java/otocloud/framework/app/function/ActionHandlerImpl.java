@@ -581,6 +581,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		
 	}
 	
+	
 	//批量查询业务对象
 	public void queryBizDataList(String bizObjectType, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
 		String account = this.appActivity.getAppInstContext().getAccount();		
