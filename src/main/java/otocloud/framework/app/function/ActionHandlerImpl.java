@@ -132,7 +132,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * 1. 向当前状态记录表中，插入一条记录。
      * 2. 更新前一个状态记录表（更新字段：下一个状态）。
      * 3. 向最新状态表中，更新（或者插入）对应的一条记录。
-     * TODO 事务处理
+     * TODO 对于传递bo_id，则返回生成的_id，对于不传递bo_id的则返回新增的_id作为bo_id
      */
 	@Override
 	public void recordFactData(String bizObjectType, JsonObject factData, String boId,
@@ -150,7 +150,16 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
  		//String boId = factData.getString("bo_id");
 		
 		JsonObject boData = new JsonObject();
-		boData.put("bo_id", boId);
+		
+		boolean needCreateId = false;
+		if(boId != null && !boId.isEmpty()){
+			boData.put("bo_id", boId);
+		}
+		else {
+			needCreateId = true;
+		}
+		final boolean _needCreateId = needCreateId;
+		
 		boData.put("previous_state", preState);
 		boData.put("current_state", newState);
 		boData.put("next_state", "");
@@ -164,16 +173,42 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		    mongoClient.insert(getBoFactTableName(bizObjectType, newState), boData, res -> {
 			  if (res.succeeded()) {
 				  String id = res.result();
+				  if(_needCreateId){
+					 JsonObject query = new JsonObject();
+					 query.put("_id", id);
+					 JsonObject update = new JsonObject();
+					 update.put("$set", new JsonObject().put("bo_id", id));
+					 mongoClient.updateCollection(getBoLatestTableName(bizObjectType), query, update, result -> {
+						  if (result.succeeded()) {							  
+							  if (preState == null || preState.length() == 0) {
+								  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
+								  this.recordDataOfLatestState(bizObjectType, newState, id, factData, id, mongoClient, ret);
+							  } else {
+								  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
+								  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, id, id, mongoClient, ret);
+							  }
+							  if(publishStateSwitchEvent)
+								  publishBizStateSwitchEvent(bizObjectType, id, preState, newState,  actor);  
+							  
+						  } else {
+				    		  Throwable err = result.cause();
+				    		  String replyMsg = err.getMessage();
+				    		  appActivity.getLogger().error(replyMsg, err);
+				    		  ret.fail(err);
+						  }
+						});
+				  }else{
 	
-				  if (preState == null || preState.length() == 0) {
-					  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
-					  this.recordDataOfLatestState(bizObjectType, newState, boId, factData, id, mongoClient, ret);
-				  } else {
-					  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
-					  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, boId, id, mongoClient, ret);
+					  if (preState == null || preState.length() == 0) {
+						  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
+						  this.recordDataOfLatestState(bizObjectType, newState, boId, factData, id, mongoClient, ret);
+					  } else {
+						  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
+						  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, boId, id, mongoClient, ret);
+					  }
+					  if(publishStateSwitchEvent)
+						  publishBizStateSwitchEvent(bizObjectType, boId, preState, newState,  actor);
 				  }
-				  if(publishStateSwitchEvent)
-					  publishBizStateSwitchEvent(bizObjectType, boId, preState, newState,  actor);
 			  } else {
 	    		  Throwable err = res.cause();
 	    		  String replyMsg = err.getMessage();
