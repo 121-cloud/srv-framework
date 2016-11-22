@@ -5,19 +5,42 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 
 public class PagingOptions {
-	public PagingOptions(JsonObject queryCond, FindOptions findOptions) {
+	public PagingOptions(JsonObject queryCond, FindOptions findOptions, 
+			boolean needReturnTotalNum, Integer pageSize, Long total, Integer totalPage) {
 		this.queryCond = queryCond;
 		this.findOptions = findOptions;
+		this.needReturnTotalNum = needReturnTotalNum;
+		this.pageSize = pageSize;
+		this.total = total;
+		this.totalPage = totalPage;
 	}
 
 	public JsonObject queryCond;
 	public FindOptions findOptions;
-
+	public boolean needReturnTotalNum = false;
+	public Integer pageSize;
+	public Long total;
+	public Integer totalPage;
 	
 	public static PagingOptions buildPagingOptions(JsonObject fields, JsonObject paging, JsonObject otherCond){
 		if(paging == null)
 			return null;
 		
+		Long total = paging.getLong("total", -1L);
+		Integer totalPage = paging.getInteger("total_page", -1);
+		Integer pageSize = paging.getInteger("page_size");
+		
+		boolean needReturnTotalNum = false;
+		if (total <= 0L) {
+			needReturnTotalNum = true;
+		}else if(totalPage <= 0) {
+			int tempTotalPage = (int) (total / pageSize);
+			if (total % pageSize > 0) {
+				tempTotalPage = tempTotalPage + 1;
+			}
+			totalPage = tempTotalPage;
+		}
+				
 		JsonObject queryCond = otherCond;
 		if(queryCond == null){
 			queryCond = new JsonObject();
@@ -25,7 +48,6 @@ public class PagingOptions {
 		
 		String sortField = paging.getString("sort_field");
 		Integer sortDirection = paging.getInteger("sort_direction");
-		Integer pageSize = paging.getInteger("page_size");
 		
 		FindOptions findOptions = new FindOptions();	
 		JsonObject sortBson = new JsonObject().put(sortField, sortDirection);
@@ -60,7 +82,7 @@ public class PagingOptions {
 			}
 		}
 		
-		return new PagingOptions(findQuery, findOptions);
+		return new PagingOptions(findQuery, findOptions, needReturnTotalNum, pageSize, total, totalPage);
 
 	}
 	

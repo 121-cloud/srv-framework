@@ -20,7 +20,7 @@ import io.vertx.core.json.JsonObject;
  * @author lijing@yonyou.com
  */
 public interface FactDataRecorder{   
-	
+	void recordFactData(JsonObject factData, String boId, JsonObject actor, String partnerAcct,	Handler<AsyncResult<String>> next);
 	void recordFactData(String bizObjectType, JsonObject factData, String boId, JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next);
 	void recordFactData(String bizObjectType, JsonObject factData, String boId, String preState, String newState, boolean publishStateSwitchEvent, JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next);
 	//void recordFactDatas(String bizObjectType, List<JsonObject> factDatas, JsonObject actor, Handler<AsyncResult<List<String>>> next);
@@ -31,7 +31,7 @@ public interface FactDataRecorder{
     void queryFactData(String bizObjectType, String boId, String boStatus, JsonObject fields, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
     void getFactDataCount(String bizObjectType, String boStatus, JsonObject queryCond, MongoClient mongoCli, Handler<AsyncResult<Long>> next);
     
-    void queryFactDataList(String bizObjectType, String boStatus, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next);
+    void queryFactDataList(String bizObjectType, String boStatus, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
     void queryFactDataList(String bizObjectType, String boStatus, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next);
     void queryFactDataList(String bizObjectType, List<String> boStatusList, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next);
     void queryFactDataList(String bizObjectType, List<String> boStatusList, JsonObject fields, JsonObject paging, JsonObject otherCond, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);

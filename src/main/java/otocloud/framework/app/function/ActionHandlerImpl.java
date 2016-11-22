@@ -114,6 +114,19 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		}
 		return retBizRoles;
 	}    */
+	
+
+    public void recordFactData(JsonObject factData,
+			String boId, JsonObject actor, String partnerAcct,
+			Handler<AsyncResult<String>> next) {
+		ActionDescriptor actionDesc = getActionDesc();
+		BizStateSwitchDesc stateSwitchDesc = actionDesc.getBizStateSwitch();
+		String preStatus = stateSwitchDesc.getFromState();
+		String newState = stateSwitchDesc.getToState();
+
+		recordFactData(this.appActivity.getBizObjectType(), factData, boId, 
+				preStatus, newState, stateSwitchDesc.needPublishEvent(), actor, partnerAcct, null, next);
+    }
     
     @Override
     public void recordFactData(String bizObjectType, JsonObject factData,
@@ -618,7 +631,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 	
 	
 	//批量查询业务对象
-	public void queryBizDataList(String bizObjectType, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
+/*	public void queryBizDataList(String bizObjectType, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
 		String account = this.appActivity.getAppInstContext().getAccount();		
 		pagingOptions.queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, pagingOptions.queryCond);
 		
@@ -644,14 +657,14 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 					
 				});		
 		
-	}
-	
-	@Override
-	public void queryFactDataList(String bizObjectType, String boStatus, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
+	}*/
+
+	//批量查询业务对象
+	public void queryBizDataList(String bizObjectType, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
 		String account = this.appActivity.getAppInstContext().getAccount();		
 		pagingOptions.queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, pagingOptions.queryCond);
 		
-		Future<List<JsonObject>> ret = Future.future();
+		Future<JsonObject> ret = Future.future();
 		ret.setHandler(next);
 		
 		//MongoClient mongoClient = getCurrentDataSource().getMongoClient();
@@ -659,19 +672,153 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		if(mongoCli == null)
 			mongoCliTemp = getCurrentDataSource().getMongoClient();		
 		MongoClient mongoClient = mongoCliTemp;
+		
+		if (pagingOptions.needReturnTotalNum) {
+			
+			mongoClient.count(getDBTableName(bizObjectType), 
+					pagingOptions.queryCond, countAres -> {
+						if (countAres.succeeded()) {
+							Long totalNum = countAres.result();
+							int tempTotalPage = (int) (totalNum / pagingOptions.pageSize);
+							if (totalNum % pagingOptions.pageSize > 0) {
+								tempTotalPage = tempTotalPage + 1;
+							}
+							int totalPageCount = tempTotalPage;
+							
+							mongoClient.findWithOptions(getDBTableName(bizObjectType), 
+									pagingOptions.queryCond, pagingOptions.findOptions, findRet->{
+										if (findRet.succeeded()) {		
+											JsonArray retArray = new JsonArray(findRet.result());
+											JsonObject retData = new JsonObject()
+												.put("total", totalNum)
+												.put("total_page", totalPageCount)
+												.put("datas", retArray);
+											
+											ret.complete(retData);										
+											
+										} else {
+											Throwable err = findRet.cause();
+											String errMsg = err.getMessage();
+											appActivity.getLogger().error(errMsg, err);
+											ret.fail(err);
+										}
+										
+									});		
+							
 
-		mongoClient.findWithOptions(getBoFactTableName(bizObjectType, boStatus), 
-				pagingOptions.queryCond, pagingOptions.findOptions, findRet->{
-					if (findRet.succeeded()) {															
-						ret.complete(findRet.result());
-					} else {
-						Throwable err = findRet.cause();
-						String errMsg = err.getMessage();
-						appActivity.getLogger().error(errMsg, err);
-						ret.fail(err);
-					}
-					
-				});		
+						} else {
+							Throwable err = countAres.cause();
+							String errMsg = err.getMessage();
+							appActivity.getLogger().error(errMsg, err);
+							ret.fail(err);
+						}
+					});
+
+		} else {
+
+			mongoClient.findWithOptions(getDBTableName(bizObjectType), 
+					pagingOptions.queryCond, pagingOptions.findOptions, findRet->{
+						if (findRet.succeeded()) {															
+							//ret.complete(findRet.result());
+							
+							JsonArray retArray = new JsonArray(findRet.result());
+							JsonObject retData = new JsonObject()
+								.put("total", pagingOptions.total)
+								.put("total_page", pagingOptions.totalPage)
+								.put("datas", retArray);
+							
+							ret.complete(retData);		
+						} else {
+							Throwable err = findRet.cause();
+							String errMsg = err.getMessage();
+							appActivity.getLogger().error(errMsg, err);
+							ret.fail(err);
+						}
+						
+					});		
+		}
+		
+	}
+
+	
+	@Override
+	public void queryFactDataList(String bizObjectType, String boStatus, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
+		String account = this.appActivity.getAppInstContext().getAccount();		
+		pagingOptions.queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, pagingOptions.queryCond);
+		
+		Future<JsonObject> ret = Future.future();
+		ret.setHandler(next);
+		
+		//MongoClient mongoClient = getCurrentDataSource().getMongoClient();
+		MongoClient mongoCliTemp = mongoCli;
+		if(mongoCli == null)
+			mongoCliTemp = getCurrentDataSource().getMongoClient();		
+		MongoClient mongoClient = mongoCliTemp;
+		
+		if (pagingOptions.needReturnTotalNum) {
+			
+			mongoClient.count(getBoFactTableName(bizObjectType, boStatus), 
+					pagingOptions.queryCond, countAres -> {
+						if (countAres.succeeded()) {
+							Long totalNum = countAres.result();
+							int tempTotalPage = (int) (totalNum / pagingOptions.pageSize);
+							if (totalNum % pagingOptions.pageSize > 0) {
+								tempTotalPage = tempTotalPage + 1;
+							}
+							int totalPageCount = tempTotalPage;
+							
+							mongoClient.findWithOptions(getBoFactTableName(bizObjectType, boStatus), 
+									pagingOptions.queryCond, pagingOptions.findOptions, findRet->{
+										if (findRet.succeeded()) {		
+											JsonArray retArray = new JsonArray(findRet.result());
+											JsonObject retData = new JsonObject()
+												.put("total", totalNum)
+												.put("total_page", totalPageCount)
+												.put("datas", retArray);
+											
+											ret.complete(retData);										
+											
+										} else {
+											Throwable err = findRet.cause();
+											String errMsg = err.getMessage();
+											appActivity.getLogger().error(errMsg, err);
+											ret.fail(err);
+										}
+										
+									});		
+							
+
+						} else {
+							Throwable err = countAres.cause();
+							String errMsg = err.getMessage();
+							appActivity.getLogger().error(errMsg, err);
+							ret.fail(err);
+						}
+					});
+
+		} else {
+
+			mongoClient.findWithOptions(getBoFactTableName(bizObjectType, boStatus), 
+					pagingOptions.queryCond, pagingOptions.findOptions, findRet->{
+						if (findRet.succeeded()) {															
+							//ret.complete(findRet.result());
+							
+							JsonArray retArray = new JsonArray(findRet.result());
+							JsonObject retData = new JsonObject()
+								.put("total", pagingOptions.total)
+								.put("total_page", pagingOptions.totalPage)
+								.put("datas", retArray);
+							
+							ret.complete(retData);		
+						} else {
+							Throwable err = findRet.cause();
+							String errMsg = err.getMessage();
+							appActivity.getLogger().error(errMsg, err);
+							ret.fail(err);
+						}
+						
+					});		
+		}
 		
 	}
 	
