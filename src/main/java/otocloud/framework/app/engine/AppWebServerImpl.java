@@ -240,11 +240,11 @@ public abstract class AppWebServerImpl implements WebServer {
 		boolean needReply = restActionDesc.getActonDesc().getHandlerDescriptor().getHandlerAddress().isNeedReply();			
 		
 		Object msg = null;
+		Boolean isJsonArray = false;
 		
 		switch (method) {
 		case POST:
-		case PUT:
-			Boolean isJsonArray = false;
+		case PUT:			
 			try{
 				String contentType = request.getHeader("content-type");
 				if(contentType.indexOf("json-array") >= 0){
@@ -308,7 +308,20 @@ public abstract class AppWebServerImpl implements WebServer {
 			
 			break;
 		case DELETE:	
-			msg = new JsonObject();
+			try{
+				String contentType = request.getHeader("content-type");
+				if(contentType.indexOf("json-array") >= 0){
+					isJsonArray = true;
+				}
+			}catch(Exception e){
+				isJsonArray = false;
+			}
+			if(isJsonArray){
+				msg = new JsonArray(routingContext.getBodyAsString());
+			}else{
+				msg = routingContext.getBodyAsJson();
+			}
+			//msg = new JsonObject();
 			bus.send(address, msg, options, reply -> {
 	            if (reply.succeeded()) {
 	            	if(!needReply){

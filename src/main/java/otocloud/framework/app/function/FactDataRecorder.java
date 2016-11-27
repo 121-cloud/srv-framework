@@ -20,6 +20,7 @@ import io.vertx.core.json.JsonObject;
  * @author lijing@yonyou.com
  */
 public interface FactDataRecorder{   
+	
 	void recordFactData(JsonObject factData, String boId, JsonObject actor, String partnerAcct,	Handler<AsyncResult<String>> next);
 	void recordFactData(String bizObjectType, JsonObject factData, String boId, JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next);
 	void recordFactData(String bizObjectType, JsonObject factData, String boId, String preState, String newState, boolean publishStateSwitchEvent, JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next);
@@ -27,14 +28,37 @@ public interface FactDataRecorder{
 	//void recordFactDatas(String bizObjectType, List<JsonObject> factDatas, String preState, String newState, JsonObject actor, Handler<AsyncResult<List<String>>> next);
     
 	void existFactData(String bizObjectType, String boId, MongoClient mongoCli, Handler<AsyncResult<Boolean>> next);
-    void queryLatestFactData(String bizObjectType, String boId, JsonObject fields, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
-    void queryFactData(String bizObjectType, String boId, String boStatus, JsonObject fields, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
-    void getFactDataCount(String bizObjectType, String boStatus, JsonObject queryCond, MongoClient mongoCli, Handler<AsyncResult<Long>> next);
-    
+    //查询单个BO的最终状态数据
+	void queryLatestFactData(String bizObjectType, String boId, JsonObject fields, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
+    //查询单个BO的指定状态数据
+	void queryFactData(String bizObjectType, String boId, String boStatus, JsonObject fields, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
+    //查询某状态BO数量
+	void getFactDataCount(String bizObjectType, String boStatus, JsonObject queryCond, MongoClient mongoCli, Handler<AsyncResult<Long>> next);
+    //查询单个BO的所有状态数据
+	void queryAllStatusDataForBO(String bizObjectType, String boId, JsonObject fields, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next);
+	
+    //分页查询指定状态BO集合（条件和字段在分页对象中指定）
     void queryFactDataList(String bizObjectType, String boStatus, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
+    //按条件查询指定状态BO集合（不分页）
     void queryFactDataList(String bizObjectType, String boStatus, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next);
-    void queryFactDataList(String bizObjectType, List<String> boStatusList, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next);
-    void queryFactDataList(String bizObjectType, List<String> boStatusList, JsonObject fields, JsonObject paging, JsonObject otherCond, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
+
+    //指定多状态查询最新状态数据（不分页）
+    void queryLatestFactDataList(String bizObjectType, List<String> boStatusList, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next);
+    //指定多状态查询最新状态数据（分页）
+    void queryLatestFactDataList(String bizObjectType, List<String> boStatusList, JsonObject fields, JsonObject paging, JsonObject otherCond, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
+
+    //按指定单一状态查询最新状态数据（不分页）
+    void queryLatestFactDataList(String bizObjectType, String boStatus, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next);
+    //按指定单一状态查询最新状态数据（分页）
+    void queryLatestFactDataList(String bizObjectType, String boStatus, JsonObject fields, JsonObject paging, JsonObject otherCond, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
+
+    //指定单一状态查询最新状态数据（分页）
+    void queryLatestFactDataList(String bizObjectType, String boStatus, JsonObject pagingInfo, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
+
+    //指定多状态查询最新状态数据（分页）
+    void queryLatestFactDataList(String bizObjectType, List<String> boStatusList, JsonObject pagingInfo, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next);
+
+    
     //发布状态变化事件
     void publishBizStateSwitchEvent(String bizObjType, String bizObjId, String preState, String newState, JsonObject actor);
     

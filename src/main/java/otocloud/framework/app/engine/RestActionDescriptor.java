@@ -5,7 +5,6 @@ package otocloud.framework.app.engine;
 
 import otocloud.common.ActionURI;
 import otocloud.framework.app.function.ActionDescriptor;
-import otocloud.framework.app.function.ActivityThread;
 
 /**
  * TODO: DOCUMENT ME!
