@@ -186,7 +186,7 @@ public abstract class AppWebServerImpl implements WebServer {
 					});
 				}					
 			});		
-	}
+	}	
 
 	
 	private void restRouteHandle(RoutingContext routingContext){
@@ -196,8 +196,16 @@ public abstract class AppWebServerImpl implements WebServer {
 		HttpServerRequest request = routingContext.request();
 		HttpServerResponse response = routingContext.response();
 
+		//设置事件总线分发参数
+		DeliveryOptions options = null;
+		if(this.cfg != null && 
+				this.cfg.containsKey(OtoConfiguration.EB_DELIVERY_OPTIONS)){
+			options = new DeliveryOptions(this.cfg.getJsonObject(OtoConfiguration.EB_DELIVERY_OPTIONS));			
+		}else{
+			options = new DeliveryOptions();
+		}		
+		
 		//固定添加事件消息头
-		DeliveryOptions options = new DeliveryOptions();		
 		// contex中一定要有四个字段，格式：“{account}|{target_account}|{actor}|{access_token}”，如果没有值可以空着，如：“33||1310233999|”
 		// TODO 如果context中没有四个参数直接返回，提示：传入参数不正确
 		ActionHttpContext actionCtxt = ActionContextTransfomer.fromHttpRequestParamToMessageHeader(request);
