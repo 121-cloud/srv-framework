@@ -10,8 +10,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
-import io.vertx.ext.mongo.UpdateOptions;
-
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -186,63 +184,79 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 			boData.put("bo", factData);
 			// 1. 向当前状态记录表中，插入一条记录。
 			
-			JsonObject query = new JsonObject();
-			query.put("bo_id", boId);
-			JsonObject update = new JsonObject();
-			update.put("$set", boData);
-			
-			//设置存在更新，不存在添加
-			UpdateOptions updateOptions = new UpdateOptions();
-			updateOptions.setUpsert(true);
+			if(preState != null && preState.equals(newState)){			
+				if(_needCreateBoId){
+			  		String errMsg = "bo_id is not null";
+		    		appActivity.getLogger().error(errMsg);
+		    		ret.fail(errMsg);
+		    		return;
+				}
+				
+				JsonObject query = new JsonObject();
+				query.put("bo_id", boId);
+				JsonObject update = new JsonObject();
+				update.put("$set", boData);					
 
-		    mongoClient.updateCollectionWithOptions(getBoFactTableName(bizObjectType, newState), query, update, updateOptions, res -> {
-			  if (res.succeeded()) {
-				  if(_needCreateBoId){ //新增时没有bo_id，则自动将_id作为bo_id
-					 JsonObject idObj = res.result().getDocUpsertedId().getJsonObject("_id");
-					 String _id = idObj.getString("$oid");
-					 JsonObject idCondObj = new JsonObject();
-					 idCondObj.put("_id", idObj);
-					 JsonObject setCurrentBoId = new JsonObject();
-					 setCurrentBoId.put("$set", new JsonObject().put("bo_id", _id).put("bo.bo_id", _id));
-					 mongoClient.updateCollection(getBoFactTableName(bizObjectType, newState), idCondObj, setCurrentBoId, result -> {
-						  if (result.succeeded()) {		
-							  factData.put("bo_id", _id);
-							  if (preState == null || preState.length() == 0) {
-								  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
-								  this.recordDataOfLatestState(bizObjectType, preState, newState, _id, factData, mongoClient, ret);
-							  } else {
-								  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
-								  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, _id, mongoClient, ret);
-							  }
-							  if(publishStateSwitchEvent)
-								  publishBizStateSwitchEvent(bizObjectType, _id, preState, newState,  actor);  
-							  
-						  } else {
-				    		  Throwable err = result.cause();
-				    		  String replyMsg = err.getMessage();
-				    		  appActivity.getLogger().error(replyMsg, err);
-				    		  ret.fail(err);
-						  }
-						});
+			    mongoClient.updateCollection(getBoFactTableName(bizObjectType, newState), query, update, res -> {
+				  if (res.succeeded()) {
+					  ret.complete(boId);
 				  }else{
-	
-					  if (preState == null || preState.length() == 0) {
-						  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
-						  this.recordDataOfLatestState(bizObjectType, preState, newState, boId, factData, mongoClient, ret);
-					  } else {
-						  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
-						  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, boId, mongoClient, ret);
-					  }
-					  if(publishStateSwitchEvent)
-						  publishBizStateSwitchEvent(bizObjectType, boId, preState, newState,  actor);
+		    		  Throwable err = res.cause();
+		    		  String replyMsg = err.getMessage();
+		    		  appActivity.getLogger().error(replyMsg, err);
+		    		  ret.fail(err);
 				  }
-			  } else {
-	    		  Throwable err = res.cause();
-	    		  String replyMsg = err.getMessage();
-	    		  appActivity.getLogger().error(replyMsg, err);
-	    		  ret.fail(err);
-			  }		  
-			});
+			    });			
+			
+			}else{
+				mongoClient.insert(getBoFactTableName(bizObjectType, newState), boData, res -> {
+				  if (res.succeeded()) {
+					  if(_needCreateBoId){ //新增时没有bo_id，则自动将_id作为bo_id					 
+						 String _id = res.result();
+						 JsonObject idCondObj = new JsonObject();
+						 idCondObj.put("_id", _id);
+						 JsonObject setCurrentBoId = new JsonObject();
+						 setCurrentBoId.put("$set", new JsonObject().put("bo_id", _id).put("bo.bo_id", _id));
+						 mongoClient.updateCollection(getBoFactTableName(bizObjectType, newState), idCondObj, setCurrentBoId, result -> {
+							  if (result.succeeded()) {		
+								  factData.put("bo_id", _id);
+								  if (preState == null || preState.length() == 0) {
+									  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
+									  this.recordDataOfLatestState(bizObjectType, preState, newState, _id, factData, mongoClient, ret);
+								  } else {
+									  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
+									  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, _id, mongoClient, ret);
+								  }
+								  if(publishStateSwitchEvent)
+									  publishBizStateSwitchEvent(bizObjectType, _id, preState, newState,  actor);  
+								  
+							  } else {
+					    		  Throwable err = result.cause();
+					    		  String replyMsg = err.getMessage();
+					    		  appActivity.getLogger().error(replyMsg, err);
+					    		  ret.fail(err);
+							  }
+							});
+					  }else{
+		
+						  if (preState == null || preState.length() == 0) {
+							  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
+							  this.recordDataOfLatestState(bizObjectType, preState, newState, boId, factData, mongoClient, ret);
+						  } else {
+							  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
+							  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, boId, mongoClient, ret);
+						  }
+						  if(publishStateSwitchEvent)
+							  publishBizStateSwitchEvent(bizObjectType, boId, preState, newState,  actor);
+					  }
+				  } else {
+		    		  Throwable err = res.cause();
+		    		  String replyMsg = err.getMessage();
+		    		  appActivity.getLogger().error(replyMsg, err);
+		    		  ret.fail(err);
+				  }		  
+				});
+			}
 		}else{
 			//查询前一状态数据
 			queryFactData(bizObjectType, boId, preState, null, mongoClient, latestBoRet->{
@@ -272,8 +286,9 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 							  }		  
 							});
 					  	}else{
-					  		appActivity.getLogger().error("no id");
-					  		ret.complete("no id");
+					  		String errMsg = "bo_id is not null";
+					  		appActivity.getLogger().error(errMsg);
+					  		ret.complete(errMsg);
 					  	}					  	
 					  
 				  } else {
