@@ -32,7 +32,7 @@ public class BizStateChangedMessage {
 	 * @param currentStatus
 	 */
 	public BizStateChangedMessage(String app, String account, String boType,
-			String boId, String previousStatus, String currentStatus) {
+			String boId, String previousStatus, String currentStatus, JsonObject factData) {
 		super();
 		this.id = java.util.UUID.randomUUID().toString();
 		this.app = app;
@@ -41,6 +41,7 @@ public class BizStateChangedMessage {
 		this.boId = boId;
 		this.previousStatus = previousStatus;
 		this.currentStatus = currentStatus;
+		this.factData = factData;
 		formatMessageString();
 	}
 
@@ -88,8 +89,16 @@ public class BizStateChangedMessage {
 	
 	protected String message;
 	protected String sendAt = "";
-	
+	protected JsonObject factData;	
 
+
+	public JsonObject getFactData() {
+		return factData;
+	}
+
+	public void setFactData(JsonObject factData) {
+		this.factData = factData;
+	}
 
 	public JsonObject toJsonObject(){
 		JsonObject ret = new JsonObject();
@@ -103,6 +112,8 @@ public class BizStateChangedMessage {
 		ret.put("current_status", currentStatus);
 		ret.put("message", message);
 		ret.put("sendAt", sendAt);
+		if(factData != null)
+			ret.put("factData", factData);
 		
 		return ret;
 	}
@@ -119,7 +130,8 @@ public class BizStateChangedMessage {
 		this.currentStatus = msgObj.getString("current_status");
 		this.message = msgObj.getString("message");		
 		this.sendAt = msgObj.getString("sendAt");		
-
+		if(msgObj.containsKey("factData"))
+			this.factData = msgObj.getJsonObject("factData");
 
 	}
 

@@ -125,7 +125,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		String newState = stateSwitchDesc.getToState();
 
 		recordFactData(this.appActivity.getBizObjectType(), factData, boId, 
-				preStatus, newState, stateSwitchDesc.needPublishEvent(), actor, partnerAcct, null, next);
+				preStatus, newState, stateSwitchDesc.needPublishEvent(), stateSwitchDesc.isContainsFactData(), actor, partnerAcct, null, next);
     }
     
     @Override
@@ -138,7 +138,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		String newState = stateSwitchDesc.getToState();
 
 		recordFactData(bizObjectType, factData, boId, 
-				preStatus, newState, stateSwitchDesc.needPublishEvent(), actor, partnerAcct, mongoCli, next);
+				preStatus, newState, stateSwitchDesc.needPublishEvent(), stateSwitchDesc.isContainsFactData(), actor, partnerAcct, mongoCli, next);
     }
 	
     /**
@@ -149,7 +149,8 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      */
 	@Override
 	public void recordFactData(String bizObjectType, JsonObject factData, String boId,
-			String preState, String newState, boolean publishStateSwitchEvent, JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next){
+			String preState, String newState, boolean publishStateSwitchEvent, boolean containsFactData,
+			JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next){
 		MongoClient mongoCliTemp = mongoCli;
 		if(mongoCli == null)
 			mongoCliTemp = getCurrentDataSource().getMongoClient();  
@@ -227,8 +228,12 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 									  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
 									  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, _id, mongoClient, ret);
 								  }
-								  if(publishStateSwitchEvent)
-									  publishBizStateSwitchEvent(bizObjectType, _id, preState, newState,  actor);  
+								  if(publishStateSwitchEvent){
+									  JsonObject eventBO = null;
+									  if(containsFactData)
+										  eventBO = factData;
+									  publishBizStateSwitchEvent(bizObjectType, _id, preState, newState, actor, eventBO);  
+								  }
 								  
 							  } else {
 					    		  Throwable err = result.cause();
@@ -246,8 +251,12 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 							  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
 							  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, boId, mongoClient, ret);
 						  }
-						  if(publishStateSwitchEvent)
-							  publishBizStateSwitchEvent(bizObjectType, boId, preState, newState,  actor);
+						  if(publishStateSwitchEvent){
+							  JsonObject eventBO = null;
+							  if(containsFactData)
+								  eventBO = factData;						  
+							  publishBizStateSwitchEvent(bizObjectType, boId, preState, newState,  actor, eventBO);
+						  }
 					  }
 				  } else {
 		    		  Throwable err = res.cause();
@@ -276,8 +285,12 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 									  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
 									  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, latestfactData, boId, mongoClient, ret);
 								  }
-								  if(publishStateSwitchEvent)
-									  publishBizStateSwitchEvent(bizObjectType, boId, preState, newState,  actor);
+								  if(publishStateSwitchEvent){
+									  JsonObject eventBO = null;
+									  if(containsFactData)
+										  eventBO = factData;				  
+									  publishBizStateSwitchEvent(bizObjectType, boId, preState, newState,  actor, eventBO);
+								  }
 							  } else {
 					    		  Throwable err = res.cause();
 					    		  String replyMsg = err.getMessage();
@@ -1466,12 +1479,12 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 	}
 	
 	@Override
-	public void publishBizStateSwitchEvent(String bizObjType, String bizObjId, String preState, String newState, JsonObject actor) {    	
+	public void publishBizStateSwitchEvent(String bizObjType, String bizObjId, String preState, String newState, JsonObject actor, JsonObject factData) {    	
 		
 		String stateSwitchEventAddress = BizStateSwitchDesc.buildStateSwitchEventAddress(bizObjType, preState, newState);	
 		String targetAddress = appActivity.buildEventAddress(stateSwitchEventAddress);
 		
-		BizStateChangedMessage msg = buildBizStateChangedMessage(bizObjType, bizObjId, preState, newState);
+		BizStateChangedMessage msg = buildBizStateChangedMessage(bizObjType, bizObjId, preState, newState, factData);
 		
 		JsonObject sendData = msg.toJsonObject();				  
 		//发布状态变化事件
@@ -1482,10 +1495,10 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 	}
 	
 	//派生类可重写
-	public BizStateChangedMessage buildBizStateChangedMessage(String bizObjType, String boId, String previousStatus, String currentStatus) {
+	public BizStateChangedMessage buildBizStateChangedMessage(String bizObjType, String boId, String previousStatus, String currentStatus, JsonObject factData) {
 		return new BizStateChangedMessage(appActivity.getService().getRealServiceName(), 
 				appActivity.getAppInstContext().getAccount(), bizObjType,
-				boId, previousStatus, currentStatus);
+				boId, previousStatus, currentStatus, factData);
 	}
 
 	

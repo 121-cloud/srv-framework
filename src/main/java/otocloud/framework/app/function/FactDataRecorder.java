@@ -23,7 +23,7 @@ public interface FactDataRecorder{
 	
 	void recordFactData(JsonObject factData, String boId, JsonObject actor, String partnerAcct,	Handler<AsyncResult<String>> next);
 	void recordFactData(String bizObjectType, JsonObject factData, String boId, JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next);
-	void recordFactData(String bizObjectType, JsonObject factData, String boId, String preState, String newState, boolean publishStateSwitchEvent, JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next);
+	void recordFactData(String bizObjectType, JsonObject factData, String boId, String preState, String newState, boolean publishStateSwitchEvent, boolean containsFactData, JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next);
 	//void recordFactDatas(String bizObjectType, List<JsonObject> factDatas, JsonObject actor, Handler<AsyncResult<List<String>>> next);
 	//void recordFactDatas(String bizObjectType, List<JsonObject> factDatas, String preState, String newState, JsonObject actor, Handler<AsyncResult<List<String>>> next);
     
@@ -60,9 +60,9 @@ public interface FactDataRecorder{
 
     
     //发布状态变化事件
-    void publishBizStateSwitchEvent(String bizObjType, String bizObjId, String preState, String newState, JsonObject actor);
+    void publishBizStateSwitchEvent(String bizObjType, String bizObjId, String preState, String newState, JsonObject actor, JsonObject factData);
     
     //构建状态变化消息，派生类可重写
-  	BizStateChangedMessage buildBizStateChangedMessage(String bizObjType, String boId, String previousStatus, String currentStatus);
+  	BizStateChangedMessage buildBizStateChangedMessage(String bizObjType, String boId, String previousStatus, String currentStatus, JsonObject factData);
 	
 }

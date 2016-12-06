@@ -14,8 +14,16 @@ public class BizStateSwitchDesc {
 	private BizRootType bizRootType = BizRootType.BIZ_OBJECT;
 	private String fromState;
 	private String toState;
+	private boolean containsFactData = false;
 	private boolean needPublishEvent = false;
 	private Boolean webExpose = false;
+	
+	public boolean isContainsFactData() {
+		return containsFactData;
+	}
+	public void setContainsFactData(boolean containsFactData) {
+		this.containsFactData = containsFactData;
+	}
 	/**
 	 * @return the webExpose
 	 */
@@ -90,8 +98,24 @@ public class BizStateSwitchDesc {
 		//setBizRoot(bizRoot);
 		setBizRootType(bizRootType);
 		setFromState(fromState);
+		setToState(toState);		
+	}
+	
+	public BizStateSwitchDesc(BizRootType bizRootType, String fromState, String toState, boolean needPublishEvent, boolean containsFactData){
+		//setBizRoot(bizRoot);
+		setBizRootType(bizRootType);
+		setFromState(fromState);
 		setToState(toState);	
-		
+		setNeedPublishEvent(needPublishEvent);
+		setContainsFactData(containsFactData);
+	}
+	
+	public BizStateSwitchDesc(BizRootType bizRootType, String fromState, String toState, boolean containsFactData){
+		//setBizRoot(bizRoot);
+		setBizRootType(bizRootType);
+		setFromState(fromState);
+		setToState(toState);	
+		setContainsFactData(containsFactData);
 	}
 	
 	public static String buildStateSwitchEventAddress(String bizObjType, String preState, String newState){
