@@ -248,24 +248,11 @@ public abstract class AppWebServerImpl implements WebServer {
 		boolean needReply = restActionDesc.getActonDesc().getHandlerDescriptor().getHandlerAddress().isNeedReply();			
 		
 		Object msg = null;
-		Boolean isJsonArray = false;
 		
 		switch (method) {
 		case POST:
 		case PUT:			
-			try{
-				String contentType = request.getHeader("content-type");
-				if(contentType.indexOf("json-array") >= 0){
-					isJsonArray = true;
-				}
-			}catch(Exception e){
-				isJsonArray = false;
-			}
-			if(isJsonArray){
-				msg = new JsonArray(routingContext.getBodyAsString());
-			}else{
-				msg = routingContext.getBodyAsJson();
-			}
+			msg = constructMessage(request, routingContext);
 			bus.send(address, msg, options, reply -> {
 	            if (reply.succeeded()) {
 	            	if(!needReply){
@@ -316,19 +303,7 @@ public abstract class AppWebServerImpl implements WebServer {
 			
 			break;
 		case DELETE:	
-			try{
-				String contentType = request.getHeader("content-type");
-				if(contentType.indexOf("json-array") >= 0){
-					isJsonArray = true;
-				}
-			}catch(Exception e){
-				isJsonArray = false;
-			}
-			if(isJsonArray){
-				msg = new JsonArray(routingContext.getBodyAsString());
-			}else{
-				msg = routingContext.getBodyAsJson();
-			}
+			msg = constructMessage(request, routingContext);
 			//msg = new JsonObject();
 			bus.send(address, msg, options, reply -> {
 	            if (reply.succeeded()) {
@@ -355,6 +330,34 @@ public abstract class AppWebServerImpl implements WebServer {
 		default:
 			break;
 		}		
+	}
+	
+	private Object constructMessage(HttpServerRequest request, RoutingContext routingContext){
+		boolean isJsonArray = false;
+		Object msg = null;
+		try{
+			String contentType = request.getHeader("content-type");
+			if(contentType.indexOf("json-array") >= 0){
+				isJsonArray = true;
+			}
+		}catch(Exception e){
+			isJsonArray = false;
+		}
+		if(isJsonArray){
+			msg = routingContext.getBodyAsJsonArray();
+			//JsonArray(routingContext.getBodyAsString());
+		}else{
+			try{
+				msg = routingContext.getBodyAsJson();
+			}catch(Exception e){
+				try{
+					msg = routingContext.getBodyAsJsonArray();
+				}catch(Exception ex){
+					msg = routingContext.getBodyAsString();
+				}
+			}
+		}
+		return msg;
 	}
 	
 	
