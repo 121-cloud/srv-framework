@@ -314,6 +314,65 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 			
 		}
 	}
+
+    /**
+     * TODO 更新最新状态数据，不触发状态变化事件
+     */
+	@Override
+	public void updateLatestFactData(String bizObjectType, JsonObject factData, String boId,			
+			JsonObject actor, MongoClient mongoCli, Handler<AsyncResult<String>> next){
+		MongoClient mongoCliTemp = mongoCli;
+		if(mongoCli == null)
+			mongoCliTemp = getCurrentDataSource().getMongoClient();  
+		
+		MongoClient mongoClient = mongoCliTemp;
+    	
+		Future<String> ret = Future.future();
+		ret.setHandler(next);		
+		
+		JsonObject boData = new JsonObject();
+		
+		boData.put("ts", getDate());		
+		boData.put("actor", actor);
+		boData.put("bo", factData);
+
+		FindOptions findOptions = new FindOptions();	
+		findOptions.setFields(new JsonObject().put("latest_state", true));		
+		
+		JsonObject query = new JsonObject();
+		query.put("bo_id", boId);
+
+		mongoClient.findWithOptions(getBoLatestTableName(bizObjectType), 
+				query, findOptions, res -> {
+			  if (res.succeeded()) {
+				  List<JsonObject> resultList = res.result();
+				  if (resultList != null && resultList.size() > 0) {
+					  	String latestState = resultList.get(0).getString("latest_state");
+					  
+						JsonObject update = new JsonObject();
+						update.put("$set", boData);					
+
+					    mongoClient.updateCollection(getBoFactTableName(bizObjectType, latestState), query, update,
+					    		updateRet -> {
+						  if (updateRet.succeeded()) {
+							  ret.complete(boId);
+						  }else{
+				    		  Throwable err = updateRet.cause();
+				    		  String replyMsg = err.getMessage();
+				    		  appActivity.getLogger().error(replyMsg, err);
+				    		  ret.fail(err);
+						  }
+					    });			
+					
+				  }
+			  }else{
+	    		  Throwable err = res.cause();
+	    		  String replyMsg = err.getMessage();
+	    		  appActivity.getLogger().error(replyMsg, err);
+	    		  ret.fail(err);
+			  }
+		});
+	}
 	
 	private void updateNextStateFiledOfPreviousTable(String bizObjectType, String perStatus, String bizStatus, JsonObject factData, String boId, 
 			MongoClient mongoClient, Future<String> ret) {	  	

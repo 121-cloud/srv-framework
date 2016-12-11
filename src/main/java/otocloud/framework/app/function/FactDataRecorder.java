@@ -24,6 +24,12 @@ public interface FactDataRecorder{
 	void recordFactData(JsonObject factData, String boId, JsonObject actor, String partnerAcct,	Handler<AsyncResult<String>> next);
 	void recordFactData(String bizObjectType, JsonObject factData, String boId, JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next);
 	void recordFactData(String bizObjectType, JsonObject factData, String boId, String preState, String newState, boolean publishStateSwitchEvent, boolean containsFactData, JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next);
+	
+    /**
+     * TODO 更新最新状态数据，不触发状态变化事件
+     */	
+	void updateLatestFactData(String bizObjectType, JsonObject factData, String boId,			
+			JsonObject actor, MongoClient mongoCli, Handler<AsyncResult<String>> next);
 	//void recordFactDatas(String bizObjectType, List<JsonObject> factDatas, JsonObject actor, Handler<AsyncResult<List<String>>> next);
 	//void recordFactDatas(String bizObjectType, List<JsonObject> factDatas, String preState, String newState, JsonObject actor, Handler<AsyncResult<List<String>>> next);
     
