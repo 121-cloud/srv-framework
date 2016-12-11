@@ -374,6 +374,47 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		});
 	}
 	
+    /**
+     * TODO 更新指定状态数据，不触发状态变化事件
+     */
+	@Override
+	public void updateFactData(String bizObjectType, JsonObject factData, String boId,	String status,		
+			JsonObject actor, MongoClient mongoCli, Handler<AsyncResult<String>> next){
+		MongoClient mongoCliTemp = mongoCli;
+		if(mongoCli == null)
+			mongoCliTemp = getCurrentDataSource().getMongoClient();  
+		
+		MongoClient mongoClient = mongoCliTemp;
+    	
+		Future<String> ret = Future.future();
+		ret.setHandler(next);		
+		
+		JsonObject boData = new JsonObject();
+		
+		boData.put("ts", getDate());		
+		boData.put("actor", actor);
+		boData.put("bo", factData);
+		
+		JsonObject query = new JsonObject();
+		query.put("bo_id", boId);
+
+					  
+		JsonObject update = new JsonObject();
+		update.put("$set", boData);					
+
+	    mongoClient.updateCollection(getBoFactTableName(bizObjectType, status), query, update,
+	    		updateRet -> {
+		  if (updateRet.succeeded()) {
+			  ret.complete(boId);
+		  }else{
+    		  Throwable err = updateRet.cause();
+    		  String replyMsg = err.getMessage();
+    		  appActivity.getLogger().error(replyMsg, err);
+    		  ret.fail(err);
+		  }
+	    });	
+	}
+	
 	private void updateNextStateFiledOfPreviousTable(String bizObjectType, String perStatus, String bizStatus, JsonObject factData, String boId, 
 			MongoClient mongoClient, Future<String> ret) {	  	
  		//String tableName = bizObjectType + "_" + perStatus;

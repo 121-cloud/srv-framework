@@ -30,8 +30,11 @@ public interface FactDataRecorder{
      */	
 	void updateLatestFactData(String bizObjectType, JsonObject factData, String boId,			
 			JsonObject actor, MongoClient mongoCli, Handler<AsyncResult<String>> next);
-	//void recordFactDatas(String bizObjectType, List<JsonObject> factDatas, JsonObject actor, Handler<AsyncResult<List<String>>> next);
-	//void recordFactDatas(String bizObjectType, List<JsonObject> factDatas, String preState, String newState, JsonObject actor, Handler<AsyncResult<List<String>>> next);
+    /**
+     * TODO 更新指定状态数据，不触发状态变化事件
+     */	
+	void updateFactData(String bizObjectType, JsonObject factData, String boId,	String status,		
+			JsonObject actor, MongoClient mongoCli, Handler<AsyncResult<String>> next);
     
 	void existFactData(String bizObjectType, String boId, MongoClient mongoCli, Handler<AsyncResult<Boolean>> next);
     //查询单个BO的最终状态数据
