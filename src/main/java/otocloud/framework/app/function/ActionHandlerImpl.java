@@ -378,6 +378,34 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * TODO 更新指定状态数据，不触发状态变化事件
      */
 	@Override
+	public void updateFactData(String bizObjectType, JsonObject query, JsonObject update, String status,		
+			MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
+		MongoClient mongoCliTemp = mongoCli;
+		if(mongoCli == null)
+			mongoCliTemp = getCurrentDataSource().getMongoClient();  
+		
+		MongoClient mongoClient = mongoCliTemp;
+    	
+		Future<JsonObject> ret = Future.future();
+		ret.setHandler(next);		
+
+	    mongoClient.updateCollection(getBoFactTableName(bizObjectType, status), query, update,
+	    		updateRet -> {
+		  if (updateRet.succeeded()) {
+			  ret.complete(updateRet.result().toJson());
+		  }else{
+    		  Throwable err = updateRet.cause();
+    		  String replyMsg = err.getMessage();
+    		  appActivity.getLogger().error(replyMsg, err);
+    		  ret.fail(err);
+		  }
+	    });	
+	}
+	
+    /**
+     * TODO 更新指定状态数据，不触发状态变化事件
+     */
+	@Override
 	public void updateFactData(String bizObjectType, JsonObject factData, String boId,	String status,		
 			JsonObject actor, MongoClient mongoCli, Handler<AsyncResult<String>> next){
 		MongoClient mongoCliTemp = mongoCli;
@@ -1483,6 +1511,28 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
   		});   		
     	
 	}	
+	
+	@Override
+	public void existFactData(String bizObjectType, JsonObject query, String status, MongoClient mongoCli, Handler<AsyncResult<Boolean>> next){
+		
+		Future<Boolean> ret = Future.future();
+		ret.setHandler(next);
+		
+		this.getFactDataCount(bizObjectType, status, query, mongoCli, res->{
+			if (res.succeeded()) {
+				if(res.result() > 0){
+					ret.complete(true);	
+				} else {
+					ret.complete(false);					
+				}				
+			}else{
+				Throwable err = res.cause();
+				ret.fail(err);
+			}
+			
+		});
+		
+	}
 	
 	public void existFactData(String bizObjectType, String boId, MongoClient mongoCli, Handler<AsyncResult<Boolean>> next){
 		JsonObject query = new JsonObject();
