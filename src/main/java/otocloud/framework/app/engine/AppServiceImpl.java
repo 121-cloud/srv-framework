@@ -13,6 +13,9 @@ import com.hazelcast.config.Config;
 
 
 
+
+
+
 import otocloud.common.OtoConfiguration;
 import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.app.common.AppInstanceContext;
@@ -20,9 +23,12 @@ import otocloud.framework.app.function.ActivityDescriptor;
 import otocloud.framework.app.function.AppActivity;
 import otocloud.framework.app.function.AppInitActivityImpl;
 import otocloud.framework.app.function.BizObjectQueryProxy;
+import otocloud.framework.app.persistence.CDODataPersistentPolicy;
+import otocloud.framework.app.persistence.CDODataPersistentPolicyFactory;
 import otocloud.framework.app.persistence.DataPersistentPolicy;
 import otocloud.framework.app.persistence.DataPersistentPolicyFactory;
 import otocloud.framework.app.persistence.OtoCloudAppDataSource;
+import otocloud.framework.app.persistence.OtoCloudCDODataSource;
 import otocloud.framework.common.OtoCloudServiceState;
 import otocloud.framework.core.HandlerDescriptor;
 import otocloud.framework.core.OtoCloudComponent;
@@ -49,6 +55,7 @@ public abstract class AppServiceImpl extends OtoCloudServiceImpl implements AppS
     
     protected AppInstanceContext appContext;
     protected OtoCloudAppDataSource otoCloudAppDataSource;
+    protected OtoCloudCDODataSource otoCloudCDODataSource;
     
 	protected boolean isWebServerHost;
 	protected AppWebServerImpl webServer;
@@ -125,7 +132,7 @@ public abstract class AppServiceImpl extends OtoCloudServiceImpl implements AppS
     		if(otoCloudAppDataSource == null){
 		        JsonObject mongoClientCfg = srvCfg.getJsonObject(AppConfiguration.APP_DATASOURCE, null);  
 		        if(mongoClientCfg != null){
-		        	String dataPersistentPolicy = mongoClientCfg.getString(AppConfiguration.APP_DATASHARDING_POLICY, "");		        	
+		        	String dataPersistentPolicy = mongoClientCfg.getString(AppConfiguration.DATASHARDING_POLICY, "");		        	
 		        	
 		        	DataPersistentPolicy persistentPolicy = null;
 		        	if(this instanceof DataPersistentPolicy){
@@ -141,6 +148,29 @@ public abstract class AppServiceImpl extends OtoCloudServiceImpl implements AppS
     		}
         }   
 	}
+    
+    //创建MongoClient
+    private void createCDOMongoClient() { 
+    	synchronized(this){ 
+    		if(otoCloudCDODataSource == null){
+		        JsonObject mongoClientCfg = srvCfg.getJsonObject(AppConfiguration.CDO_DATASOURCE, null);  
+		        if(mongoClientCfg != null){
+		        	String dataPersistentPolicy = mongoClientCfg.getString(AppConfiguration.DATASHARDING_POLICY, "");		        	
+		        	
+		        	CDODataPersistentPolicy persistentPolicy = null;
+		        	if(this instanceof CDODataPersistentPolicy){
+		        		persistentPolicy = (CDODataPersistentPolicy)this;
+		        	}else{
+		        		CDODataPersistentPolicyFactory dataPersistentPolicyFactory = new CDODataPersistentPolicyFactory(dataPersistentPolicy);
+		        		persistentPolicy = dataPersistentPolicyFactory.getPolicy();
+		        	}
+
+			        otoCloudCDODataSource = new OtoCloudCDODataSource(vertxInstance, mongoClientCfg, persistentPolicy);
+					//otoCloudAppDataSource.init(vertxInstance, mongoClientCfg);			
+		        }  
+    		}
+        }   
+	}
 
     @Override
     public OtoCloudAppDataSource getAppDatasource(){
@@ -151,6 +181,14 @@ public abstract class AppServiceImpl extends OtoCloudServiceImpl implements AppS
     	return appServiceEngine.getAppDatasource();
     }
 
+    @Override
+    public OtoCloudCDODataSource getCDODatasource(){
+    	if(otoCloudCDODataSource == null)
+    		createCDOMongoClient();
+    	if(otoCloudCDODataSource != null)
+    		return otoCloudCDODataSource;
+    	return appServiceEngine.getCDODatasource();
+    }
 	
 	private void appendAppCtx(JsonObject instCfg, AppInstanceContext appInstCtx){
 		JsonObject compCommon = null;

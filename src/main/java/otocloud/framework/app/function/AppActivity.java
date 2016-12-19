@@ -10,6 +10,7 @@ import java.util.List;
 import otocloud.framework.app.common.AppInstanceContext;
 import otocloud.framework.app.engine.AppService;
 import otocloud.framework.app.persistence.OtoCloudAppDataSource;
+import otocloud.framework.app.persistence.OtoCloudCDODataSource;
 import otocloud.framework.core.OtoCloudEventDescriptor;
 import otocloud.framework.core.OtoCloudComponent;
 
@@ -24,6 +25,7 @@ public interface AppActivity extends OtoCloudComponent, BizThreadRecorder {
 	AppInstanceContext getAppInstContext();	
 	
 	OtoCloudAppDataSource getAppDatasource();
+	OtoCloudCDODataSource getCDODatasource();
 	
 	AppService getAppService();
 	

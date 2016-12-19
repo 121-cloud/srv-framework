@@ -18,9 +18,12 @@ import otocloud.common.util.JsonUtil;
 import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.app.common.AppInstanceContext;
 import otocloud.framework.app.function.ActivityDescriptor;
+import otocloud.framework.app.persistence.CDODataPersistentPolicy;
+import otocloud.framework.app.persistence.CDODataPersistentPolicyFactory;
 import otocloud.framework.app.persistence.DataPersistentPolicy;
 import otocloud.framework.app.persistence.DataPersistentPolicyFactory;
 import otocloud.framework.app.persistence.OtoCloudAppDataSource;
+import otocloud.framework.app.persistence.OtoCloudCDODataSource;
 import otocloud.framework.core.OtoCloudEventHandlerRegistry;
 import otocloud.framework.core.OtoCloudServiceForVerticleImpl;
 import otocloud.framework.core.VertxInstancePool;
@@ -55,6 +58,8 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 	protected int distributedNodeIndex = 0;
 	
     protected OtoCloudAppDataSource otoCloudAppDataSource;
+    protected OtoCloudCDODataSource otoCloudCDODataSource;
+
 
 	protected Map<String, AppService> appInstances;
 	//protected Map<String, String> accountAppInsts; 
@@ -176,7 +181,7 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
     		if(otoCloudAppDataSource == null){
 		        JsonObject mongoClientCfg = srvCfg.getJsonObject(AppConfiguration.APP_DATASOURCE, null);  
 		        if(mongoClientCfg != null){
-		        	String dataPersistentPolicy = mongoClientCfg.getString(AppConfiguration.APP_DATASHARDING_POLICY, "");
+		        	String dataPersistentPolicy = mongoClientCfg.getString(AppConfiguration.DATASHARDING_POLICY, "");
 		        	DataPersistentPolicy persistentPolicy = null;
 		        	if(this instanceof DataPersistentPolicy){
 		        		persistentPolicy = (DataPersistentPolicy)this;
@@ -191,11 +196,41 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
     	}
 	}
     
+    //创建MongoClient
+    private void createCDOMongoClient() { 
+    	synchronized(this){ 
+    		if(otoCloudCDODataSource == null){
+		        JsonObject mongoClientCfg = srvCfg.getJsonObject(AppConfiguration.CDO_DATASOURCE, null);  
+		        if(mongoClientCfg != null){
+		        	String dataPersistentPolicy = mongoClientCfg.getString(AppConfiguration.DATASHARDING_POLICY, "");		        	
+		        	
+		        	CDODataPersistentPolicy persistentPolicy = null;
+		        	if(this instanceof CDODataPersistentPolicy){
+		        		persistentPolicy = (CDODataPersistentPolicy)this;
+		        	}else{
+		        		CDODataPersistentPolicyFactory dataPersistentPolicyFactory = new CDODataPersistentPolicyFactory(dataPersistentPolicy);
+		        		persistentPolicy = dataPersistentPolicyFactory.getPolicy();
+		        	}
+
+			        otoCloudCDODataSource = new OtoCloudCDODataSource(vertxInstance, mongoClientCfg, persistentPolicy);
+					//otoCloudAppDataSource.init(vertxInstance, mongoClientCfg);			
+		        }  
+    		}
+        }   
+	}
+    
     @Override
     public OtoCloudAppDataSource getAppDatasource(){
     	if(otoCloudAppDataSource == null)
     		createAppMongoClient();
     	return otoCloudAppDataSource;
+    }
+    
+    @Override
+    public OtoCloudCDODataSource getCDODatasource(){
+    	if(otoCloudCDODataSource == null)
+    		createCDOMongoClient();
+    	return otoCloudCDODataSource;
     }
 
 	

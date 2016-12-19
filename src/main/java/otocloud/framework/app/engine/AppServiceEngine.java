@@ -9,6 +9,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.Map;
 
 import otocloud.framework.app.persistence.OtoCloudAppDataSource;
+import otocloud.framework.app.persistence.OtoCloudCDODataSource;
 import otocloud.framework.core.OtoCloudServiceForVerticle;
 
 
@@ -24,6 +25,7 @@ public interface AppServiceEngine extends OtoCloudServiceForVerticle, WebServerH
 	boolean checkInstanceScope(String acctId);	
 	
 	OtoCloudAppDataSource getAppDatasource();
+	OtoCloudCDODataSource getCDODatasource();
 	
 	void saveConfig(String serviceName, Future<Void> depFuture);
 	void saveConfig(Future<Void> depFuture);

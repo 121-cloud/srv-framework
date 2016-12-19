@@ -12,6 +12,7 @@ import otocloud.framework.app.function.ActivityDescriptor;
 import otocloud.framework.app.function.AppActivity;
 import otocloud.framework.app.function.AppInitActivityImpl;
 import otocloud.framework.app.persistence.OtoCloudAppDataSource;
+import otocloud.framework.app.persistence.OtoCloudCDODataSource;
 import otocloud.framework.core.OtoCloudService;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -33,6 +34,8 @@ public interface AppService extends OtoCloudService, WebServerHost {
 	AppInstanceContext getAppInstContext();
 	
 	OtoCloudAppDataSource getAppDatasource();
+	
+	OtoCloudCDODataSource getCDODatasource();
 	
 	void setAppServiceEngine(AppServiceEngine appServiceEngine);
 	

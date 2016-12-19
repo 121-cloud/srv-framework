@@ -14,6 +14,7 @@ public class DataPersistentPolicyFactory {
 	
 	private DataPersistentPolicyImpl dataPersistentPolicy;
 	private DataShardingPersistentPolicyImpl dataShardingPersistentPolicy;
+	
 	private String policyName = "single";
 	
 	public DataPersistentPolicyFactory(){		

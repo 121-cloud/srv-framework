@@ -115,9 +115,9 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		return retBizRoles;
 	}    */
 	
-
+	@Override
     public void recordFactData(JsonObject factData,
-			String boId, JsonObject actor, String partnerAcct,
+			String boId, JsonObject actor, 
 			Handler<AsyncResult<String>> next) {
 		ActionDescriptor actionDesc = getActionDesc();
 		BizStateSwitchDesc stateSwitchDesc = actionDesc.getBizStateSwitch();
@@ -125,12 +125,12 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		String newState = stateSwitchDesc.getToState();
 
 		recordFactData(this.appActivity.getBizObjectType(), factData, boId, 
-				preStatus, newState, stateSwitchDesc.needPublishEvent(), stateSwitchDesc.isContainsFactData(), actor, partnerAcct, null, next);
+				preStatus, newState, stateSwitchDesc.needPublishEvent(), stateSwitchDesc.isContainsFactData(), actor, null, next);
     }
     
     @Override
     public void recordFactData(String bizObjectType, JsonObject factData,
-			String boId, JsonObject actor, String partnerAcct, MongoClient mongoCli,
+			String boId, JsonObject actor, MongoClient mongoCli,
 			Handler<AsyncResult<String>> next) {
 		ActionDescriptor actionDesc = getActionDesc();
 		BizStateSwitchDesc stateSwitchDesc = actionDesc.getBizStateSwitch();
@@ -138,7 +138,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		String newState = stateSwitchDesc.getToState();
 
 		recordFactData(bizObjectType, factData, boId, 
-				preStatus, newState, stateSwitchDesc.needPublishEvent(), stateSwitchDesc.isContainsFactData(), actor, partnerAcct, mongoCli, next);
+				preStatus, newState, stateSwitchDesc.needPublishEvent(), stateSwitchDesc.isContainsFactData(), actor, mongoCli, next);
     }
 	
     /**
@@ -150,7 +150,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 	@Override
 	public void recordFactData(String bizObjectType, JsonObject factData, String boId,
 			String preState, String newState, boolean publishStateSwitchEvent, boolean containsFactData,
-			JsonObject actor, String partnerAcct, MongoClient mongoCli, Handler<AsyncResult<String>> next){
+			JsonObject actor, MongoClient mongoCli, Handler<AsyncResult<String>> next){
 		MongoClient mongoCliTemp = mongoCli;
 		if(mongoCli == null)
 			mongoCliTemp = getCurrentDataSource().getMongoClient();  
@@ -178,10 +178,10 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		boData.put("current_state", newState);
 		boData.put("next_state", "");
 		boData.put("account", account);		
-		boData.put("ts", getDate());		
+		boData.put("ts", getNowDate());		
 		boData.put("actor", actor);
 		if(factData != null){	
-			boData.put("partner", partnerAcct);
+			//boData.put("partner", partnerAcct);
 			boData.put("bo", factData);
 			// 1. 向当前状态记录表中，插入一条记录。
 			
@@ -314,6 +314,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 			
 		}
 	}
+	
 
     /**
      * TODO 更新最新状态数据，不触发状态变化事件
@@ -332,7 +333,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		
 		JsonObject boData = new JsonObject();
 		
-		boData.put("ts", getDate());		
+		boData.put("ts", getNowDate());		
 		boData.put("actor", actor);
 		boData.put("bo", factData);
 
@@ -419,7 +420,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		
 		JsonObject boData = new JsonObject();
 		
-		boData.put("ts", getDate());		
+		boData.put("ts", getNowDate());		
 		boData.put("actor", actor);
 		boData.put("bo", factData);
 		
@@ -455,7 +456,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, query);
 		
     	JsonObject update = new JsonObject();
-    	update.put("$set", new JsonObject().put("next_state", bizStatus).put("ts", getDate()));
+    	update.put("$set", new JsonObject().put("next_state", bizStatus).put("ts", getNowDate()));
 		mongoClient.updateCollection(getBoFactTableName(bizObjectType, perStatus), query, update, result -> {
 			  String replyMsg = "ok";
 			  if (result.succeeded()) {
@@ -470,11 +471,14 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 			});
 	}
 	
-	private String getDate() {
+	
+	protected String getNowDate() {
 		Date date = new Date();
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 		return df.format(date);
 	}
+	
+
 	
 	//@SuppressWarnings("unchecked")
 	private void recordDataOfLatestState(String bizObjectType, String preStatus, String bizStatus, String boId, 
@@ -502,7 +506,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 					    }
 					  
 				    	JsonObject update = new JsonObject();
-				    	update.put("$set", new JsonObject().put("latest_state", bizStatus).put("ts", getDate()));
+				    	update.put("$set", new JsonObject().put("latest_state", bizStatus).put("ts", getNowDate()));
 						mongoClient.updateCollection(getBoLatestTableName(bizObjectType), query, update, result -> {
 							  //String replyMsg = "ok";
 							  if (result.succeeded()) {
@@ -540,7 +544,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 				    		insert.put("biz_thread", factData.getJsonObject("biz_thread").copy());				    		
 				    	}*/
 				    	
-				    	insert.put("ts", getDate());
+				    	insert.put("ts", getNowDate());
 				    	mongoClient.insert(getBoLatestTableName(bizObjectType), insert, result -> {
 						  //String replyMsg = "ok";
 						  if (result.succeeded()) {
@@ -763,6 +767,8 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 			
 		}
 	}
+	
+
 
     /**
      * 按指定状态查询单个BO
@@ -993,6 +999,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		}
 		
 	}
+	
 
     /**
      * 按指定状态查询，支持分页，不区分是否最终状态，只要有过此状态的数据都会查出来
@@ -1662,6 +1669,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		return getDBTableName(tableName);
 	}	
 	
+	
 	public String getBoFactTableName(String boStatus){
 		String boType = this.appActivity.getBizObjectType();
 		String tableName = boType + "_" + boStatus;		
@@ -1672,6 +1680,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		String boLatestTb = boType + "_" + MONGO_BO_LATEST_STATE;
 		return getDBTableName(boLatestTb);
 	}
+	
 	
 	public String getBoLatestTableName(){
 		String boType = this.appActivity.getBizObjectType();

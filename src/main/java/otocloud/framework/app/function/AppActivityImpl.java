@@ -13,12 +13,14 @@ import io.vertx.ext.mongo.MongoClient;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.app.common.AppInstanceContext;
 import otocloud.framework.app.engine.AppService;
 import otocloud.framework.app.persistence.DataPersistentPolicy;
 import otocloud.framework.app.persistence.DataPersistentPolicyFactory;
 import otocloud.framework.app.persistence.OtoCloudAppDataSource;
+import otocloud.framework.app.persistence.OtoCloudCDODataSource;
 import otocloud.framework.core.OtoCloudEventDescriptor;
 import otocloud.framework.core.HandlerDescriptor;
 import otocloud.framework.core.OtoCloudComponentImpl;
@@ -110,7 +112,7 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
         JsonObject mongoClientCfg = pscCfg.getJsonObject(AppConfiguration.APP_DATASOURCE, null);  
         if(mongoClientCfg != null){
         	this.logger.info("配置" + this.getName() + "的mongo连接：" + mongoClientCfg.toString());
-        	String dataPersistentPolicy = mongoClientCfg.getString(AppConfiguration.APP_DATASHARDING_POLICY, "");
+        	String dataPersistentPolicy = mongoClientCfg.getString(AppConfiguration.DATASHARDING_POLICY, "");
         	
         	DataPersistentPolicy persistentPolicy = null;
         	if(this instanceof DataPersistentPolicy){
@@ -134,7 +136,11 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
     	return getAppService().getAppDatasource();
     }
 
-	
+    @Override
+    public OtoCloudCDODataSource getCDODatasource(){
+    	return getAppService().getCDODatasource();
+    }
+    
 	/**
 	 * {@inheritDoc}
 	 */

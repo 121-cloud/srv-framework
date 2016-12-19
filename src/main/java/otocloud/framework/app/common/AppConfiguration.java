@@ -34,6 +34,7 @@ public class AppConfiguration extends OtoConfiguration {
 	public static final String ACCOUNT_SERVICE_POST = "port";	*/
 	
 	public static final String APP_DATASOURCE = "app_datasource";
-	public static final String APP_DATASHARDING_POLICY = "data_sharding_policy";
+	public static final String CDO_DATASOURCE = "cdo_datasource";
+	public static final String DATASHARDING_POLICY = "data_sharding_policy";
 	
 }
