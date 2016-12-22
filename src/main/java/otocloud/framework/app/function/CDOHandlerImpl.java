@@ -185,28 +185,33 @@ public abstract class CDOHandlerImpl<T> extends ActionHandlerImpl<T> implements 
 			}
 		}else{
 			//查询前一状态数据
-			queryCDO(fromAcct, toAcct, bizObjectType, boId, preState, null, mongoClient, latestBoRet->{
+			queryCDO(roleDirection, partnerAcct, fromAcct, toAcct, bizObjectType, boId, preState, null, mongoClient, latestBoRet->{
 				  if (latestBoRet.succeeded()) {
 					  	JsonObject latestfactData = latestBoRet.result();
 					  	if(latestfactData != null){	
 					  		//boData.put("partner", latestfactData.getString("partner"));
 							boData.put("bo", latestfactData.getJsonObject("bo"));
+							
+							final String preStateTmp = (preState == null || preState.isEmpty()) ? latestfactData.getString("current_state") : preState;
+							
+							boData.put("previous_state", preStateTmp);
+							
 							// 1. 向当前状态记录表中，插入一条记录。
 						    mongoClient.insert(getCDOTableName(bizObjectType, newState, fromAcct, toAcct), boData, res -> {
 							  if (res.succeeded()) {
 								  //String id = res.result();					
-								  if (preState == null || preState.length() == 0) {
+								  if (preStateTmp == null || preStateTmp.length() == 0) {
 									  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
-									  this.recordCDOforLatestState(roleDirection, fromAcct, toAcct, bizObjectType, preState, newState, boId, latestfactData, mongoClient, ret);
+									  this.recordCDOforLatestState(roleDirection, fromAcct, toAcct, bizObjectType, preStateTmp, newState, boId, latestfactData, mongoClient, ret);
 								  } else {
 									  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
-									  this.updateCDONextStateFiledOfPreviousTable(roleDirection, fromAcct, toAcct, bizObjectType, preState, newState, latestfactData, boId, mongoClient, ret);
+									  this.updateCDONextStateFiledOfPreviousTable(roleDirection, fromAcct, toAcct, bizObjectType, preStateTmp, newState, latestfactData, boId, mongoClient, ret);
 								  }
 								  if(publishStateSwitchEvent){
 									  JsonObject eventBO = null;
 									  if(containsFactData)
 										  eventBO = factData;				  
-									  publishBizStateSwitchEvent(bizObjectType, boId, preState, newState,  actor, eventBO);
+									  publishBizStateSwitchEvent(bizObjectType, boId, preStateTmp, newState,  actor, eventBO);
 								  }
 							  } else {
 					    		  Throwable err = res.cause();
@@ -330,8 +335,10 @@ public abstract class CDOHandlerImpl<T> extends ActionHandlerImpl<T> implements 
 		}
 		final String fromAcct = fromAcctTemp;
 		final String toAcct = toAcctTemp;
+		
+		JsonObject updateJs = new JsonObject().put("$set", update);
 
-	    mongoClient.updateCollection(getCDOTableName(bizObjectType, status, fromAcct, toAcct), query, update,
+	    mongoClient.updateCollection(getCDOTableName(bizObjectType, status, fromAcct, toAcct), query, updateJs,
 	    		updateRet -> {
 		  if (updateRet.succeeded()) {
 			  ret.complete(updateRet.result().toJson());
@@ -665,7 +672,7 @@ public abstract class CDOHandlerImpl<T> extends ActionHandlerImpl<T> implements 
 					  List<JsonObject> resultList = res.result();
 					  if (resultList != null && resultList.size() > 0) {
 						  String latestState = resultList.get(0).getString("latest_state");
-						  queryCDO(fromAcct, toAcct, bizObjectType, boId, latestState, fields, mongoClient, next);
+						  queryCDO(roleDirection, partnerAcct, fromAcct, toAcct, bizObjectType, boId, latestState, fields, mongoClient, next);
 					  }else{
 							Future<JsonObject> ret = Future.future();
 							ret.setHandler(next);
@@ -690,7 +697,7 @@ public abstract class CDOHandlerImpl<T> extends ActionHandlerImpl<T> implements 
 					  List<JsonObject> resultList = res.result();
 					  if (resultList != null && resultList.size() > 0) {
 						  String latestState = resultList.get(0).getString("latest_state");
-						  queryCDO(fromAcct, toAcct, bizObjectType, boId, latestState, fields, mongoClient, next);
+						  queryCDO(roleDirection, partnerAcct, fromAcct, toAcct, bizObjectType, boId, latestState, fields, mongoClient, next);
 					  }else{
 							Future<JsonObject> ret = Future.future();
 							ret.setHandler(next);
@@ -715,8 +722,14 @@ public abstract class CDOHandlerImpl<T> extends ActionHandlerImpl<T> implements 
 	 /**
      * 按指定状态查询单个BO
      */	
-	private void queryCDO(String fromAcct, String toAcct, String bizObjectType, String boId, String boStatus, JsonObject fields, MongoClient mongoClient, Handler<AsyncResult<JsonObject>> next){
+	private void queryCDO(BizRoleDirection roleDirection, String partnerAcct, String fromAcct, String toAcct, String bizObjectType, String boId, String boStatus, JsonObject fields, MongoClient mongoClient, Handler<AsyncResult<JsonObject>> next){
 
+		if(boStatus == null || boStatus.isEmpty()){
+			queryLatestCDO(roleDirection, partnerAcct, bizObjectType, boId, fields, next);
+			return;
+		}
+		
+		
 		JsonObject query = new JsonObject();
 		query.put("bo_id", boId);
 		
@@ -785,7 +798,7 @@ public abstract class CDOHandlerImpl<T> extends ActionHandlerImpl<T> implements 
 		
 		MongoClient mongoClient = appActivity.getCDODatasource().getMongoClient();
 		
-		queryCDO(fromAcct, toAcct, bizObjectType, boId, boStatus, fields, mongoClient, next);
+		queryCDO(roleDirection, partnerAcct, fromAcct, toAcct, bizObjectType, boId, boStatus, fields, mongoClient, next);
 		
 	}
 	
