@@ -16,7 +16,8 @@ import otocloud.common.OtoCloudDirectoryHelper;
 import otocloud.common.OtoCloudLogger;
 import otocloud.common.OtoConfiguration;
 import otocloud.common.util.JsonUtil;
-import otocloud.framework.app.common.AppConfiguration;
+import otocloud.framework.core.WebServer;
+import otocloud.framework.core.WebServerImpl;
 import otocloud.framework.common.OtoCloudServiceLifeCycleImpl;
 import otocloud.framework.common.OtoCloudServiceState;
 import otocloud.framework.core.factory.OtoCloudComponentFactory;
@@ -72,6 +73,9 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	protected OtoCloudEventHandlerRegistry apiURIResolver;
 	protected JsonObject vertxOptionsCfg;
 	protected Config clusterCfg;
+	
+	protected boolean _isWebServerHost;
+	protected WebServerImpl _webServer;
 	
 	public OtoCloudServiceImpl() {
 		Map<String, Deployment> compSet = new HashMap<String, Deployment>();
@@ -280,6 +284,12 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
         if(srvCfg.containsKey("api_register_server")){
         	apiRegServerName = srvCfg.getJsonObject("api_register_server").getString("webserver_name", "");
         }
+        
+		if(srvCfg.containsKey(OtoConfiguration.WEBSERVER_HOST)){
+			_isWebServerHost = srvCfg.getBoolean(OtoConfiguration.WEBSERVER_HOST);
+		}else {
+			_isWebServerHost = false;
+		}
         
 		configLogging();
 	}
@@ -992,8 +1002,24 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	 */
 	@Override
 	public void afterInit(Future<Void> initFuture) {
+		
+		if(hasWebServerHost()){
+			_webServer = (WebServerImpl)_createWebServer();
+			if(_webServer != null){	
+				Vertx  webSrvHostVertx = this.vertxInstance;
+				if(webSrvHostVertx == null){
+					webSrvHostVertx = this.vertxInstance;
+				}
+				_webServer.init(getRealServiceName(), null, webSrvHostVertx, srvCfg.getJsonObject(OtoConfiguration.WEBSERVER_CFG), null);
+			}
+		}
+		
 		futureStatusComplete();
 	    initFuture.complete();	
+	}
+	
+	private WebServer _createWebServer(){
+		return new WebServerImpl();
 	}
 
 
@@ -1006,6 +1032,11 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		ret.setHandler(next);		
 		ret.complete();
 	}
+	
+	
+	public boolean hasWebServerHost(){
+		return _isWebServerHost;
+	}
 
 
 	/**
@@ -1013,10 +1044,20 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	 */
 	@Override
 	public void afterRun(Future<Void> runFuture) {
+		//运行web服务器
+		_runWebServer();
+		
 		futureStatusComplete();
 		runFuture.complete();			
 	}
 	
+	
+	private void _runWebServer(){
+		if(hasWebServerHost() && _webServer != null){
+			_webServer.busRoute(this);
+			_webServer.listen();
+		}
+	}	
 
 
 
@@ -1036,6 +1077,11 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	 */
 	@Override
 	public void afterStop(Future<Void> stopFuture) {
+		
+		if(hasWebServerHost() && _webServer != null){
+			_webServer.close();
+		}
+		
 		futureStatusComplete();
 		stopFuture.complete();			
 	}
@@ -1223,7 +1269,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
     	        
     	        JsonObject innerConfig = srvCfg.getJsonObject("options").getJsonObject("config");
     	        
-    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(AppConfiguration.VERTX_OPTIONS_KEY, null);
+    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(OtoConfiguration.VERTX_OPTIONS_KEY, null);
     	        
     	        Future<Void> initFuture = Future.future();
     	        srvRunner.init(innerConfig, clusterCfg, vertxOptionsCfg, initFuture);
@@ -1279,7 +1325,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
     	        
     	        JsonObject innerConfig = srvCfg.getJsonObject("options").getJsonObject("config");
     	        
-    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(AppConfiguration.VERTX_OPTIONS_KEY, null);
+    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(OtoConfiguration.VERTX_OPTIONS_KEY, null);
     	        
     	        Future<Void> initFuture = Future.future();
     	        srvRunner.init(innerConfig, clusterCfg, vertxOptionsCfg, initFuture);
@@ -1320,7 +1366,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
     	        
     	        JsonObject innerConfig = srvCfg.getJsonObject("options").getJsonObject("config");
     	        
-    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(AppConfiguration.VERTX_OPTIONS_KEY, null);
+    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(OtoConfiguration.VERTX_OPTIONS_KEY, null);
 
     			VertxOptions options = OtoCloudServiceImpl.createVertxOptions(srvCfg, clusterCfg, vertxOptionsCfg);		
     			// 创建群集Vertx运行时环境
@@ -1366,7 +1412,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	public static Config loadClusterConfig() {
 		//bus群集配置
 		try{			
-			String clusterCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + AppConfiguration.CLUSTER_CFG_FILE; //hazelcast.xml";
+			String clusterCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + OtoConfiguration.CLUSTER_CFG_FILE; //hazelcast.xml";
 			return new FileSystemXmlConfig(clusterCfgFilePath);
 		}catch(Exception e){
 			return null;

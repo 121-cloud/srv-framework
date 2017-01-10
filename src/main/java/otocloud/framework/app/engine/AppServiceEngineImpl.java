@@ -153,6 +153,11 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 	}
 	
 	@Override
+	public WebServer createWebServer() {
+		return new AppWebServerImpl();
+	}
+	
+	@Override
 	public void configService(){
 		super.configService();
 

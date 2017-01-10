@@ -165,4 +165,12 @@ public abstract class OtoCloudComponentImpl extends AbstractVerticle implements 
 		return dependencies;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public List<OtoCloudEventHandlerRegistry> getEventHandlers() {	
+		return eventHandlers;
+	}
+	
 }

@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2015 121Cloud Project Group  All rights reserved.
  */
-package otocloud.framework.app.engine;
+package otocloud.framework.core;
 
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
@@ -34,25 +34,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import otocloud.common.ActionContextTransfomer;
-import otocloud.common.ActionHttpContext;
 import otocloud.common.ActionURI;
 import otocloud.common.OtoConfiguration;
 import otocloud.common.util.RestResponseUtil;
-import otocloud.framework.app.function.ActivityDescriptor;
-import otocloud.framework.app.function.AppActivity;
-import otocloud.framework.app.function.PartnerBizObjectQueryHandler;
+import otocloud.framework.core.WebServer;
 import otocloud.framework.core.ApiParameterDescriptor;
-import otocloud.framework.core.OtoCloudEventDescriptor;
 import otocloud.framework.core.OtoCloudComponent;
-import otocloud.framework.app.function.ActionDescriptor;
+
 
 /**
  * TODO: DOCUMENT ME!
  * @date 2015年6月26日
  * @author lijing@yonyou.com
  */
-public class AppWebServerImpl implements WebServer {
+public class WebServerImpl implements WebServer {
 
 	protected Vertx vertx;
 	protected Router router;
@@ -124,7 +119,7 @@ public class AppWebServerImpl implements WebServer {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void restRoute(Collection<ActivityDescriptor> activityDescList) {		
+	public void restRoute(Collection<OtoCloudComponent> activityDescList) {		
 		actions = new HashMap<String, RestActionDescriptor>();		
 		Map<String, ActionURI> actionUrlsMap = actionUrlSetting();		
 		getActionRoutes(activityDescList, actionUrlsMap);	
@@ -151,9 +146,9 @@ public class AppWebServerImpl implements WebServer {
 				
 				String restApiURI = restActionDesc.getActionURI().getUri();
 				if(restApiURI.isEmpty()){
-					restApiURI = "/" + appId + "/" + restActionDesc.getActivityName();
+					restApiURI = "/" + appId + "/" + restActionDesc.getComponentName();
 				}else{
-					restApiURI = "/" + appId + "/" + restActionDesc.getActivityName() + "/" + restApiURI;
+					restApiURI = "/" + appId + "/" + restActionDesc.getComponentName() + "/" + restApiURI;
 				}
 				
 				Route route = router.route(httpMethod, restApiURI);
@@ -165,20 +160,20 @@ public class AppWebServerImpl implements WebServer {
 		}		
 	}
 	
-	private void getActionRoutes(Collection<ActivityDescriptor> activityDescList, Map<String, ActionURI> actionUrlsMap){		
+	private void getActionRoutes(Collection<OtoCloudComponent> activityDescList, Map<String, ActionURI> actionUrlsMap){		
 		activityDescList.forEach(activityDesc -> {
-				List<ActionDescriptor> actionDescs = activityDesc.getActionsDesc();
+				List<OtoCloudEventHandlerRegistry> actionDescs = activityDesc.getEventHandlers();
 				if(actionDescs != null && actionDescs.size() > 0){
 					actionDescs.forEach(actionDesc -> {
-						if(actionDesc.getHandlerDescriptor().getRestApiURI() != null){							
-							RestActionDescriptor restActionDesc = new RestActionDescriptor(actionDesc);	
-							restActionDesc.setActivityName(activityDesc.getActivityName());
-							String addressString = restActionDesc.getActonDesc().getHandlerDescriptor().getHandlerAddress().getEventAddress();
+						if(actionDesc.getHanlderDesc().getRestApiURI() != null){							
+							RestActionDescriptor restActionDesc = new RestActionDescriptor(actionDesc.getHanlderDesc());	
+							restActionDesc.setComponentName(activityDesc.getName());
+							String addressString = restActionDesc.getActonDesc().getHandlerAddress().getEventAddress();
 							if(actionUrlsMap != null && actionUrlsMap.containsKey(addressString)){
 								restActionDesc.setActionURI(actionUrlsMap.get(addressString));
 								actions.put(addressString, restActionDesc);
 							}else{
-								ActionURI actUrl = actionDesc.getHandlerDescriptor().getRestApiURI();
+								ActionURI actUrl = actionDesc.getHanlderDesc().getRestApiURI();
 								restActionDesc.setActionURI(actUrl);
 								actions.put(addressString, restActionDesc);							
 							}
@@ -206,18 +201,10 @@ public class AppWebServerImpl implements WebServer {
 		}		
 		
 		//固定添加事件消息头
-		// contex中一定要有四个字段，格式：“{account}|{target_account}|{actor}|{access_token}”，如果没有值可以空着，如：“33||1310233999|”
+		// contex中一定要有四个字段，格式：“{actor}|{access_token}”，如果没有值可以空着，如：“|1310233999”
 		// TODO 如果context中没有四个参数直接返回，提示：传入参数不正确
-		ActionHttpContext actionCtxt = ActionContextTransfomer.fromHttpRequestParamToMessageHeader(request);
-		String account = actionCtxt.getAccount();
-		if(account == null || account.isEmpty()){
-			String errMsg = "context中缺少account";
-			writeWebLog(errMsg, request);
-			RestResponseUtil.sendError(401, errMsg, response);
-			return;
-		}
-		
-		ActionContextTransfomer.setBusMessageHeader(actionCtxt, options);
+		HandlerHttpContext actionCtxt = HandlerContextTransfomer.fromHttpRequestParamToMessageHeader(request);		
+		HandlerContextTransfomer.setBusMessageHeader(actionCtxt, options);
 		
 		//------获取token进行访问验证-------
 /*		String actorAccount = actionCtxt.getAccount();
@@ -232,20 +219,20 @@ public class AppWebServerImpl implements WebServer {
 		HttpMethod method = restActionDesc.getActionURI().getHttpMethod();
 		
 		//构建参数
-		List<ApiParameterDescriptor> paramNames = restActionDesc.getActonDesc().getHandlerDescriptor().getParamsDesc();		
+		List<ApiParameterDescriptor> paramNames = restActionDesc.getActonDesc().getParamsDesc();		
 		if(paramNames != null && paramNames.size() > 0){
 			buildEBHeader(options, request, method, paramNames);
 		}
 		
-		String targetAccount = actionCtxt.getTargetAccount();
+		//String targetAccount = actionCtxt.getTargetAccount();
 		
 		EventBus bus = vertx.eventBus();
-		String address = buildAddress(restActionDesc.getActonDesc().getHandlerDescriptor().getHandlerAddress().getEventAddress(), targetAccount);		
+		String address = restActionDesc.getActonDesc().getHandlerAddress().getEventAddress();		
 		
 		logger.info(formatLogMessage(String.format("REST请求分发：URI：%s，HttpMethod：%s，Address：%s", 
 													restActionDesc.getActionURI().getUri(), method.toString(), address )));
 		
-		boolean needReply = restActionDesc.getActonDesc().getHandlerDescriptor().getHandlerAddress().isNeedReply();			
+		boolean needReply = restActionDesc.getActonDesc().getHandlerAddress().isNeedReply();			
 		
 		Object msg = null;
 		
@@ -413,12 +400,12 @@ public class AppWebServerImpl implements WebServer {
 
 	
 	@Override
-	public void busRoute(Collection<AppService> appInstances) {	
+	public void busRoute(OtoCloudService appInstance) {	
 		if(!webEventbusIsEnabled())
 			return;
 		
 		webEventAddresses = new ArrayList<String>();
-		getOutboundEventAddress(appInstances); 
+		getOutboundEventAddress(appInstance); 
 		
 		if(webEventAddresses.size() > 0){
 			options = new BridgeOptions();
@@ -451,8 +438,8 @@ public class AppWebServerImpl implements WebServer {
 	}
 	
 	
-	private void getOutboundEventAddress(Collection<AppService> appInstances){		
-		appInstances.forEach(appInst -> {
+	private void getOutboundEventAddress(OtoCloudService appInst){		
+		
 			Map<String, Deployment> components = appInst.getComponents();
 			components.forEach((key,deployment) -> {
 
@@ -460,30 +447,30 @@ public class AppWebServerImpl implements WebServer {
 				Iterator<Verticle> it = deployments.iterator();
 				OtoCloudComponent component = (OtoCloudComponent)it.next();			
 				
-				if(component instanceof AppActivity){
-					AppActivity activity = (AppActivity)component;			
-					String account = activity.getAppInstContext().getAccount();
-					ActivityDescriptor activityDesc = activity.getActivityDescriptor();
-					List<OtoCloudEventDescriptor> eventsDesc = activityDesc.getBizEventsDesc();
+				//if(component instanceof OtoCloudComponent){
+					OtoCloudComponent activity = (OtoCloudComponent)component;			
+					//String account = activity.getAppInstContext().getAccount();
+					//ActivityDescriptor activityDesc = activity.getActivityDescriptor();
+					List<OtoCloudEventHandlerRegistry> eventsDesc = activity.getEventHandlers();
 					if(eventsDesc != null && eventsDesc.size() > 0){
 						eventsDesc.forEach(eventDesc -> {
-							if(eventDesc.isSendToWeb()){
-								String outboudAddress = buildAddress(eventDesc.getEventAddress(), 
-										account);							
-								webEventAddresses.add(outboudAddress);							
+							if(eventDesc.getHanlderDesc().getHandlerAddress().isSendToWeb()){
+								/*String outboudAddress = buildAddress(eventDesc.getEventAddress(), 
+										account);	*/						
+								webEventAddresses.add(eventDesc.getEventAddress());							
 							}
 						});
 					}
-				}
+				//}
 				
 			});	
-		});	
+
 		
 	}	
 	
 	
 	@Override
-	public void addOutboundEvent(AppService appInst){
+	public void addOutboundEvent(OtoCloudService appInst){
 		Map<String, Deployment> components = appInst.getComponents();
 		components.forEach((key,deployment) -> {
 
@@ -491,16 +478,16 @@ public class AppWebServerImpl implements WebServer {
 			Iterator<Verticle> it = deployments.iterator();
 			OtoCloudComponent component = (OtoCloudComponent)it.next();			
 			
-			if(component instanceof AppActivity){
-				AppActivity activity = (AppActivity)component;		
-				String account = activity.getAppInstContext().getAccount();
-				ActivityDescriptor activityDesc = activity.getActivityDescriptor();
-				List<OtoCloudEventDescriptor> eventsDesc = activityDesc.getBizEventsDesc();
+			//if(component instanceof OtoCloudComponent){
+			OtoCloudComponent activity = (OtoCloudComponent)component;		
+				//String account = activity.getAppInstContext().getAccount();
+			//OtoCloudEventHandlerRegistry activityDesc = activity.getEventHandlers();
+				List<OtoCloudEventHandlerRegistry> eventsDesc = activity.getEventHandlers();
 				if(eventsDesc != null && eventsDesc.size() > 0){
 					eventsDesc.forEach(eventDesc -> {
-						if(eventDesc.isSendToWeb()){
-							String outboudAddress = buildAddress(eventDesc.getEventAddress(), 
-									 account);
+						if(eventDesc.getHanlderDesc().getHandlerAddress().isSendToWeb()){
+							String outboudAddress = eventDesc.getEventAddress();//buildAddress(eventDesc.getEventAddress(), 
+									 //account);
 							if(!webEventAddresses.contains(outboudAddress)){
 								webEventAddresses.add(outboudAddress);							
 								PermittedOptions outbound = new PermittedOptions().setAddress(outboudAddress);
@@ -509,13 +496,13 @@ public class AppWebServerImpl implements WebServer {
 						}
 					});
 				}
-			}
+			//}
 			
 		});	
 	}
 	
 	@Override
-	public void removeOutboundEvent(AppService appInst){
+	public void removeOutboundEvent(OtoCloudService appInst){
 		Map<String, Deployment> components = appInst.getComponents();
 		components.forEach((key,deployment) -> {
 
@@ -523,16 +510,16 @@ public class AppWebServerImpl implements WebServer {
 			Iterator<Verticle> it = deployments.iterator();
 			OtoCloudComponent component = (OtoCloudComponent)it.next();			
 
-			if(component instanceof AppActivity){
-				AppActivity activity = (AppActivity)component;		
-				String account = activity.getAppInstContext().getAccount();
-				ActivityDescriptor activityDesc = activity.getActivityDescriptor();
-				List<OtoCloudEventDescriptor> eventsDesc = activityDesc.getBizEventsDesc();
+			//if(component instanceof AppActivity){
+			OtoCloudComponent activity = (OtoCloudComponent)component;		
+				//String account = activity.getAppInstContext().getAccount();
+				//ActivityDescriptor activityDesc = activity.getActivityDescriptor();
+			List<OtoCloudEventHandlerRegistry> eventsDesc = activity.getEventHandlers();
 				if(eventsDesc != null && eventsDesc.size() > 0){
 					eventsDesc.forEach(eventDesc -> {
-						if(eventDesc.isSendToWeb()){
-							String outboudAddress = buildAddress(eventDesc.getEventAddress(), 
-									 account);
+						if(eventDesc.getHanlderDesc().getHandlerAddress().isSendToWeb()){
+							String outboudAddress = eventDesc.getEventAddress(); //buildAddress(eventDesc.getEventAddress(), 
+									 //account);
 							
 							webEventAddresses.remove(outboudAddress);	
 							
@@ -544,7 +531,7 @@ public class AppWebServerImpl implements WebServer {
 						}
 					});
 				}	
-			}
+			//}
 			
 		});	
 	}
@@ -595,26 +582,18 @@ public class AppWebServerImpl implements WebServer {
 		return logPrefix + "[" + srvName + "]:" + retMsg;		
 	}
 	
-	private String buildAddress(String address, String account){
-		return account + "." + address;
-	}
-	
 
+	private void writeWebLog(String msg, Throwable err, HttpServerRequest req){
+		logger.error(formatLogMessage(msg, req), err.getCause());
+	}
+
+	@Override
 	public Map<String, ActionURI> actionUrlSetting() {
 		Map<String, ActionURI> retMap = new HashMap<String, ActionURI>();		
-		
-		retMap.put(PartnerBizObjectQueryHandler.LISTEN_BO_QUERY_BASE, new ActionURI("/partner-bo/query", HttpMethod.POST));
 
 		return retMap;
 	}
 	
-	private void writeWebLog(String msg, Throwable err, HttpServerRequest req){
-		logger.error(formatLogMessage(msg, req), err.getCause());
-	}
-	
-	private void writeWebLog(String msg, HttpServerRequest req){
-		logger.error(formatLogMessage(msg, req));
-	}
 	
 
 }

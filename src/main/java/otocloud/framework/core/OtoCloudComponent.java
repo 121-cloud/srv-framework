@@ -39,5 +39,7 @@ public interface OtoCloudComponent extends Verticle {
 	void saveConfig(Future<Void> saveFuture);
 	
 	JsonObject getDependencies();
+	
+	List<OtoCloudEventHandlerRegistry> getEventHandlers();
 
 }

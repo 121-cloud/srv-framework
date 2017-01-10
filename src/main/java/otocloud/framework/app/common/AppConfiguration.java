@@ -19,7 +19,6 @@ public class AppConfiguration extends OtoConfiguration {
 	public static final String APP_DESC_KEY = "app_desc";//APP名称描述
 	public static final String MASTER_ROLE = "master_role";//APP名称描述	
 	public static final String APP_INST_SCOPE = "app_inst_scope";//应用实例范围	
-	public static final String WEBSERVER_HOST = "run_webserver"; //是否作为web服务器HOST
 	public static final String APPINST_CONTEXT = "app_context"; 
 	
 	public static final String INST_COMMON ="inst_common"; //应用实例公共配置

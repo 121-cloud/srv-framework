@@ -16,6 +16,7 @@ import com.hazelcast.config.Config;
 
 
 
+
 import otocloud.common.OtoConfiguration;
 import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.app.common.AppInstanceContext;
@@ -124,6 +125,11 @@ public abstract class AppServiceImpl extends OtoCloudServiceImpl implements AppS
 		
 		futureStatusComplete();
 	    initFuture.complete();
+	}
+	
+	@Override
+	public WebServer createWebServer() {
+		return new AppWebServerImpl();
 	}
 	
     //创建MongoClient
