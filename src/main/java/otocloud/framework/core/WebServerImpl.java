@@ -27,7 +27,6 @@ import io.vertx.ext.web.handler.sockjs.PermittedOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -119,10 +118,10 @@ public class WebServerImpl implements WebServer {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void restRoute(Collection<OtoCloudComponent> activityDescList) {		
+	public void restRoute(Map<String, Deployment> components) {		
 		actions = new HashMap<String, RestActionDescriptor>();		
 		Map<String, ActionURI> actionUrlsMap = actionUrlSetting();		
-		getActionRoutes(activityDescList, actionUrlsMap);	
+		getActionRoutes(components, actionUrlsMap);	
 		
 		router.route().handler(CorsHandler.create("*")
 			      .allowedMethod(HttpMethod.GET)
@@ -133,7 +132,7 @@ public class WebServerImpl implements WebServer {
 			      .allowedHeader("X-PINGARUNER")
 			      .allowedHeader("Content-Type"));		
 		
-		router.route().handler(BodyHandler.create());		
+		router.route().handler(BodyHandler.create());	
 		
 		if(actions.size() > 0){
 /*			BiConsumer<String, RestActionDescriptor> createRoute= (key,actionDesc) -> {
@@ -160,14 +159,18 @@ public class WebServerImpl implements WebServer {
 		}		
 	}
 	
-	private void getActionRoutes(Collection<OtoCloudComponent> activityDescList, Map<String, ActionURI> actionUrlsMap){		
-		activityDescList.forEach(activityDesc -> {
-				List<OtoCloudEventHandlerRegistry> actionDescs = activityDesc.getEventHandlers();
+	private void getActionRoutes(Map<String, Deployment> components, Map<String, ActionURI> actionUrlsMap){		
+		components.forEach((key, comDep) -> {
+				Set<Verticle> deployments = comDep.getVerticles();
+				Iterator<Verticle> it = deployments.iterator();
+				OtoCloudComponent component = (OtoCloudComponent)it.next();			
+			
+				List<OtoCloudEventHandlerRegistry> actionDescs = component.getEventHandlers();
 				if(actionDescs != null && actionDescs.size() > 0){
 					actionDescs.forEach(actionDesc -> {
 						if(actionDesc.getHanlderDesc().getRestApiURI() != null){							
 							RestActionDescriptor restActionDesc = new RestActionDescriptor(actionDesc.getHanlderDesc());	
-							restActionDesc.setComponentName(activityDesc.getName());
+							restActionDesc.setComponentName(component.getName());
 							String addressString = restActionDesc.getActonDesc().getHandlerAddress().getEventAddress();
 							if(actionUrlsMap != null && actionUrlsMap.containsKey(addressString)){
 								restActionDesc.setActionURI(actionUrlsMap.get(addressString));

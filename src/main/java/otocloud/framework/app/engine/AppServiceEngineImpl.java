@@ -493,9 +493,9 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 		  String querySql;
 		  
 		  if(condition == null || condition.isEmpty()){
-			  querySql = "SELECT org_acct_id,biz_role_id FROM view_org_acct_app_inst WHERE code=? AND app_version_id=?";
+			  querySql = "SELECT org_acct_id,biz_role_id FROM acct_app WHERE code=? AND d_app_id=? AND app_version_id=?";
 		  }else{
-			  querySql = "SELECT org_acct_id,biz_role_id FROM view_org_acct_app_inst WHERE code=? AND app_version_id=? and " + condition;
+			  querySql = "SELECT org_acct_id,biz_role_id FROM acct_app WHERE code=? AND d_app_id=? AND app_version_id=? and " + condition;
 		  }
 		  
 		  try{
@@ -514,6 +514,7 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 			  	    		  retFuture.fail(err);
 						  }else{										
 							conn.queryWithParams(querySql, new JsonArray().add(this.getRealServiceName())
+									.add(srvCfg.getInteger(AppConfiguration.APP_ID_KEY, -1))
 									.add(srvCfg.getInteger(AppConfiguration.APP_VERSION_ID_KEY, -1)),
 							  appSubRet->{								  
 								  if (appSubRet.succeeded()) {

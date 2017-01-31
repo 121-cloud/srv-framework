@@ -13,7 +13,7 @@ import otocloud.common.OtoConfiguration;
 public class AppConfiguration extends OtoConfiguration {
 	
 	//应用配置中的键
-	//public static final String APP_ID_KEY = "app_id";//应用配置中的APPID键
+	public static final String APP_ID_KEY = "app_id";//应用配置中的APPID键
 	public static final String APP_VERSION_ID_KEY = "version_id";//应用版本ID
 	public static final String SERVICE_NAME_KEY = "service_name";	
 	public static final String APP_DESC_KEY = "app_desc";//APP名称描述

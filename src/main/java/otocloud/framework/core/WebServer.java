@@ -4,12 +4,12 @@
 package otocloud.framework.core;
 
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import otocloud.common.ActionURI;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.Deployment;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 
@@ -33,7 +33,7 @@ public interface WebServer {
 	Map<String, RestActionDescriptor> getActionRoutes();
 		
 	void init(String srvName, Vertx theVertx, JsonObject webCfg, Logger thelogger);	
-	void restRoute(Collection<OtoCloudComponent> activityDescList);
+	void restRoute(Map<String, Deployment> components);
 	void busRoute(OtoCloudService appInstance);
 	void listen();
 	void close();

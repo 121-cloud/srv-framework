@@ -1,6 +1,9 @@
 package otocloud.framework.core;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URLClassLoader;
@@ -16,6 +19,7 @@ import otocloud.common.OtoCloudDirectoryHelper;
 import otocloud.common.OtoCloudLogger;
 import otocloud.common.OtoConfiguration;
 import otocloud.common.util.JsonUtil;
+import otocloud.framework.app.common.OtoCloudXmlConfigBuilder;
 import otocloud.framework.core.WebServer;
 import otocloud.framework.core.WebServerImpl;
 import otocloud.framework.common.OtoCloudServiceLifeCycleImpl;
@@ -1054,6 +1058,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	
 	private void _runWebServer(){
 		if(hasWebServerHost() && _webServer != null){
+			_webServer.restRoute(this.components);
 			_webServer.busRoute(this);
 			_webServer.listen();
 		}
@@ -1409,12 +1414,33 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	}
 
 	
+/*	public static Config loadClusterConfig() {
+		//bus群集配置
+		try{	
+			//System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "org.apache.crimson.jaxp.DocumentBuilderFactoryImpl");
+			String clusterCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + OtoConfiguration.CLUSTER_CFG_FILE; //hazelcast.xml";
+			//Config retConfig = new FileSystemXmlConfig(clusterCfgFilePath);
+			
+	        InputStream in = new FileInputStream(new File(clusterCfgFilePath));
+	        Config ret =new OtoCloudXmlConfigBuilder(in).setProperties(System.getProperties()).build();
+	        
+			//System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl");
+			return ret;
+		}catch(Exception e){
+			e.printStackTrace();
+			return null;
+			//e.printStackTrace();
+		}
+    }*/
+	
 	public static Config loadClusterConfig() {
 		//bus群集配置
-		try{			
+		try{	
 			String clusterCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + OtoConfiguration.CLUSTER_CFG_FILE; //hazelcast.xml";
-			return new FileSystemXmlConfig(clusterCfgFilePath);
+			Config ret = new FileSystemXmlConfig(clusterCfgFilePath);			
+			return ret;
 		}catch(Exception e){
+			e.printStackTrace();
 			return null;
 			//e.printStackTrace();
 		}
