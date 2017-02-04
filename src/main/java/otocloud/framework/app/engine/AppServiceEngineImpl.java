@@ -411,7 +411,10 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 						logger.debug("订阅账户数:" + size.toString());
 						result.forEach(appSubscriber -> runAppInstance((JsonObject) appSubscriber, runFuture, runningCount, size));
 
-				  }				  
+				  }else{
+					   runFuture.RunFuture.complete();	
+					   logger.info("无账户订购此应用.");
+				  }
 			  }else{
   	    		  Throwable err = done.cause();
   	    		  String replyMsg = err.getMessage();
@@ -493,9 +496,9 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 		  String querySql;
 		  
 		  if(condition == null || condition.isEmpty()){
-			  querySql = "SELECT org_acct_id,biz_role_id FROM acct_app WHERE code=? AND d_app_id=? AND app_version_id=?";
+			  querySql = "SELECT acct_id,app_version_id FROM acct_app WHERE status='A' AND d_app_id=? AND app_version_id=? AND app_inst=?";
 		  }else{
-			  querySql = "SELECT org_acct_id,biz_role_id FROM acct_app WHERE code=? AND d_app_id=? AND app_version_id=? and " + condition;
+			  querySql = "SELECT acct_id,app_version_id FROM acct_app WHERE status='A' AND d_app_id=? AND app_version_id=? AND app_inst=? AND " + condition;
 		  }
 		  
 		  try{
@@ -513,9 +516,10 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 			  	    		  getLogger().error(replyMsg, err);
 			  	    		  retFuture.fail(err);
 						  }else{										
-							conn.queryWithParams(querySql, new JsonArray().add(this.getRealServiceName())
-									.add(srvCfg.getInteger(AppConfiguration.APP_ID_KEY, -1))
-									.add(srvCfg.getInteger(AppConfiguration.APP_VERSION_ID_KEY, -1)),
+							conn.queryWithParams(querySql, new JsonArray()									
+									.add(srvCfg.getLong(AppConfiguration.APP_ID_KEY, 0L))
+									.add(srvCfg.getLong(AppConfiguration.APP_VERSION_ID_KEY, 0L))
+									.add(this.getRealServiceName()),
 							  appSubRet->{								  
 								  if (appSubRet.succeeded()) {
 									  ResultSet result = appSubRet.result();
@@ -549,7 +553,8 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 
 	// 运行应用实例
 	public void runAppInstance(JsonObject appSubscriber, AppInstRunFuture runFuture, AtomicInteger runningCount, Integer subscriberCount) {
-		String account = JsonUtil.getJsonValue(appSubscriber,"org_acct_id");
+		String account = JsonUtil.getJsonValue(appSubscriber,"acct_id");
+		String appVersion = JsonUtil.getJsonValue(appSubscriber,"app_version_id");
 		
 		//如果服务以及存在，则返回
 		if(appInstances.containsKey(account)){
@@ -560,7 +565,7 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 			return;
 		}
 		
-		AppInstanceContext appInstCtx = createAppInstContext(account, appSubscriber);
+		AppInstanceContext appInstCtx = createAppInstContext(account, appVersion);
 
 		AppService appInst = newAppInstance();
 		appInst.setAppServiceEngine(this);
@@ -617,7 +622,7 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 		}
 	}
 	
-	private AppInstanceContext createAppInstContext(String account, JsonObject appSubscriber){	
+	private AppInstanceContext createAppInstContext(String account, String appVersion /*JsonObject appSubscriber*/){	
 /*		JsonArray frombizRoles = appSubscriber.getJsonArray("from_roles");
 		JsonArray tobizRoles = appSubscriber.getJsonArray("to_roles");
 */		
@@ -632,13 +637,13 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 		
 		
 		//String instName = appSubscriber.getString("instname");
-		String bizRoleId = this.masterRole;
-		if(appSubscriber.containsKey("biz_role_id"))
-			bizRoleId = JsonUtil.getJsonValue(appSubscriber, "biz_role_id");
+		//String bizRoleId = this.masterRole;
+/*		if(appSubscriber.containsKey("biz_role_id"))
+			bizRoleId = JsonUtil.getJsonValue(appSubscriber, "biz_role_id");*/
 		
 		String appId = getRealServiceName();
 		
-		AppInstanceContext appInstCtx = new AppInstanceContext(appId, appDesc, account, bizRoleId);
+		AppInstanceContext appInstCtx = new AppInstanceContext(appId, appVersion, appDesc, account);
 		
 		return appInstCtx;
 	}	

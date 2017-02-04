@@ -1,9 +1,7 @@
 package otocloud.framework.core;
 
-import java.io.File;
-import java.io.FileInputStream;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URLClassLoader;
@@ -19,7 +17,6 @@ import otocloud.common.OtoCloudDirectoryHelper;
 import otocloud.common.OtoCloudLogger;
 import otocloud.common.OtoConfiguration;
 import otocloud.common.util.JsonUtil;
-import otocloud.framework.app.common.OtoCloudXmlConfigBuilder;
 import otocloud.framework.core.WebServer;
 import otocloud.framework.core.WebServerImpl;
 import otocloud.framework.common.OtoCloudServiceLifeCycleImpl;
@@ -29,6 +26,8 @@ import otocloud.framework.core.factory.OtoCloudHttpComponentFactory;
 import otocloud.framework.core.factory.OtoCloudHttpSecureComponentFactory;
 import otocloud.framework.core.factory.OtoCloudMavenComponentFactory;
 import otocloud.framework.core.factory.OtoCloudServiceFactory;
+import otocloud.framework.core.session.RedisSessionStore;
+import otocloud.framework.core.session.SessionStore;
 import otocloud.persistence.dao.JdbcDataSource;
 
 import com.hazelcast.config.Config;
@@ -66,10 +65,12 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
     protected JsonObject srvCfg;
 	protected Vertx vertxInstance;	
 	protected JdbcDataSource sysDataSource;
+	private SessionStore sessionStore;
 	protected boolean isolationVertx = false;
 	protected Map<String, Deployment> components;	
 	protected OtoCloudLogger logger;	
-	protected String srvId = "";
+	protected Long appId = 0L;
+	protected Long appVersion = 0L;
 	protected String srvName = "";
 	protected String apiRegServerName = "";
 	protected List<OtoCloudEventHandlerRegistry> handlers;
@@ -111,15 +112,15 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		this.srvName = srvName;
 	}	
 
-/*	@Override
-	public String getServiceId(){
-		return srvId;
-	}
+	@Override
+	public Long getAppId(){
+		return appId;
+	}	
 	
 	@Override
-	public void setServiceId(String srvId){
-		this.srvId = srvId;
-	}*/
+	public Long getAppVersion(){
+		return appVersion;
+	}
 	
 	@Override
 	public JdbcDataSource getSysDatasource(){
@@ -283,7 +284,9 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	@Override
 	public void configService(){
 		
-        //setServiceId(srvCfg.getString("service_id", ""));
+		appId = srvCfg.getLong("app_id", 0L);
+		appVersion = srvCfg.getLong("version_id", 0L);
+		
         setServiceName(srvCfg.getString("service_name", ""));
         if(srvCfg.containsKey("api_register_server")){
         	apiRegServerName = srvCfg.getJsonObject("api_register_server").getString("webserver_name", "");
@@ -294,8 +297,17 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		}else {
 			_isWebServerHost = false;
 		}
+		
+		//session 服务
+		if(srvCfg.containsKey(OtoConfiguration.SESSION_CFG)){
+			sessionStore = new RedisSessionStore(vertxInstance, srvCfg.getJsonObject(OtoConfiguration.SESSION_CFG));
+		}
         
 		configLogging();
+	}
+	
+	public SessionStore getSessionStore(){
+		return sessionStore;
 	}
 	
 	private void configLogging() {

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import otocloud.framework.common.OtoCloudServiceLifeCycle;
+import otocloud.framework.core.session.SessionStore;
 import otocloud.persistence.dao.JdbcDataSource;
 
 import com.hazelcast.config.Config;
@@ -27,13 +28,17 @@ import io.vertx.core.logging.Logger;
 public interface OtoCloudService extends OtoCloudServiceLifeCycle {
 	EventBus getBus();
 	
-/*	String getServiceId();	
-	void setServiceId(String srvId);*/
+	Long getAppId();	
+	Long getAppVersion();
+	
+	//void setServiceId(String srvId);
 	String getServiceName();
 	String getRealServiceName();
 	void setServiceName(String srvName);
 	
 	JdbcDataSource getSysDatasource();
+	
+	SessionStore getSessionStore();
 	
 	Map<String, Deployment> getComponents();
 	

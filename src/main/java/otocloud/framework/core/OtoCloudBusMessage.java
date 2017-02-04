@@ -8,6 +8,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonObject;
 
 /**
  * TODO: DOCUMENT ME!
@@ -23,6 +24,9 @@ public interface OtoCloudBusMessage<T> {
 	String address();
 
 	MultiMap headers();
+	
+	JsonObject getSession();
+	void setSession(JsonObject session);
 
 	T body();
 

@@ -6,7 +6,7 @@ package otocloud.framework.core;
 import io.vertx.core.Future;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
-//import io.vertx.core.eventbus.MessageConsumer;
+
 
 /**
  * TODO: DOCUMENT ME!
@@ -16,6 +16,9 @@ import io.vertx.core.eventbus.Message;
 public abstract class OtoCloudEventHandlerBase<T> implements OtoCloudEventHandler<T> {
 	
 	protected HandlerDescriptor hanlderDesc;
+	
+	protected Boolean ignoreAuthVerify = false;
+
 
 	//protected MessageConsumer<T> consumer;	
 	
@@ -72,14 +75,13 @@ public abstract class OtoCloudEventHandlerBase<T> implements OtoCloudEventHandle
 	@Override
 	public void internalHandle(Message<T> msg){
 		System.out.println("服务框架 收到请求消息！");
-		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);
+		
+		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);	
+		
 		if(otoMsg.needAsyncReply()){
-			msg.reply("ok");
+			otoMsg.reply("ok");
 		}
 		handle(otoMsg);
 	}
-		
-	
-
     
 }

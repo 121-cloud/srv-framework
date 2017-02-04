@@ -15,20 +15,20 @@ public class AppInstanceContext {
 /*	public static final String TO_BIZROLE_KEY = "tobizrole";
 	public static final String From_BIZROLE_KEY = "frombizrole";
 */	
-	private String bizRoleId;
+	//private String bizRoleId;
 	
 	/**
 	 * @return the masterBizRoleId
 	 */
-	public String getBizRoleId() {
+/*	public String getBizRoleId() {
 		return bizRoleId;
-	}
+	}*/
 	/**
 	 * @param masterBizRoleId the masterBizRoleId to set
 	 */
-	public void setBizRoleId(String bizRoleId) {
+/*	public void setBizRoleId(String bizRoleId) {
 		this.bizRoleId = bizRoleId;
-	}
+	}*/
 
 /*	private String instId;
 	*//**
@@ -58,6 +58,15 @@ public class AppInstanceContext {
 /*	public void setInstName(String instName) {
 		this.instName = instName;
 	}*/
+	
+	private String appVersion;
+
+	public String getAppVersion() {
+		return appVersion;
+	}
+	public void setAppVersion(String appVersion) {
+		this.appVersion = appVersion;
+	}
 
 	private String appId;
 	/**
@@ -180,15 +189,16 @@ public class AppInstanceContext {
 	public AppInstanceContext() {		
 	}
 	
-	public AppInstanceContext(/*String appInstId, String appInstName, */ String appId, String appDescription, 
-			String account, String bizRoleId /*JsonArray fromBizRoles, JsonArray toBizRoles*/) {	
+	public AppInstanceContext(/*String appInstId, String appInstName, */ String appId, String appVersion, String appDescription,
+			String account /* String bizRoleId *//*JsonArray fromBizRoles, JsonArray toBizRoles*/) {	
 /*		this.setInstId(appInstId);
 		this.setInstName(appInstName);*/
 		this.setAppId(appId);
+		this.setAppVersion(appVersion);
 //		this.setServiceName(serviceName);
 		this.setAppDesc(appDescription);
 		this.setAccount(account);
-		this.setBizRoleId(bizRoleId);
+		//this.setBizRoleId(bizRoleId);
 /*		this.setFromBizRoles(fromBizRoles);
 		this.setToBizRoles(toBizRoles);*/
 		//appCfg.put("account", acccode);
@@ -204,10 +214,11 @@ public class AppInstanceContext {
 		ret/*.put("instId", instId)
 		   .put("instName", instName)*/
 		   .put("appId", appId)
+		   .put("appVersion", appVersion)
 //		   .put("serviceName", serviceName)
 		   .put("appDesc", appDesc)
-		   .put("account",account)
-		   .put("bizRoleId", bizRoleId);
+		   .put("account",account);
+		   //.put("bizRoleId", bizRoleId);
 /*		   .put("fromBizRoles", fromBizRoles)
 		   .put("toBizRoles", toBizRoles);*/
 		return ret;
@@ -220,7 +231,7 @@ public class AppInstanceContext {
 //		this.setServiceName(appCtx.getString("serviceName"));
 		this.setAppDesc(appCtx.getString("appDesc"));
 		this.setAccount(appCtx.getString("account"));
-		this.setBizRoleId(appCtx.getString("bizRoleId"));
+		this.setAppVersion(appCtx.getString("appVersion"));
 /*		this.setFromBizRoles(appCtx.getJsonArray("fromBizRoles"));
 		this.setToBizRoles(appCtx.getJsonArray("toBizRoles"));*/
 	}

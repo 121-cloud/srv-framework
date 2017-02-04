@@ -28,6 +28,7 @@ public class OtoCloudBusMessageImpl<T> implements OtoCloudBusMessage<T> {
 	private String replyAddress;
 	private EventBus bus;
 	private boolean asyncReply = false;
+	private JsonObject session;
 	
 	public boolean needAsyncReply() {
 		return asyncReply;
@@ -169,6 +170,16 @@ public class OtoCloudBusMessageImpl<T> implements OtoCloudBusMessage<T> {
 		}else{
 			eventMessage.fail(failureCode, message);
 		}
+	}
+
+	@Override
+	public JsonObject getSession() {		
+		return this.session;
+	}
+	
+	@Override
+	public void setSession(JsonObject session){
+		this.session = session;
 	}
 	  
 }

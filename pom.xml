@@ -31,34 +31,33 @@
 		</dependency>
 
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>io.vertx</groupId>
-			<artifactId>vertx-http-service-factory</artifactId>
-		</dependency>
-
-		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-web</artifactId>
 		</dependency>
 		
 		<dependency>
 		  <groupId>io.vertx</groupId>
-		  <artifactId>vertx-auth-jdbc</artifactId>
-		</dependency>		
+		  <artifactId>vertx-redis-client</artifactId>
+		</dependency>	
 
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-hazelcast</artifactId>
-		</dependency>
-		
+		</dependency>		
 
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-maven-service-factory</artifactId>
+		</dependency>		
+		
+		<dependency>
+			<groupId>io.vertx</groupId>
+			<artifactId>vertx-http-service-factory</artifactId>
+		</dependency>		
+		
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
 		</dependency>
 
 	</dependencies>

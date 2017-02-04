@@ -39,7 +39,7 @@ public class AppInstLoadHandler extends AppServiceEngineHandlerImpl<JsonObject> 
 	public void handle(OtoCloudBusMessage<JsonObject> msg) {
 		JsonObject appSubscriber = msg.body();
 		
-		String acctId = JsonUtil.getJsonValue(appSubscriber,"org_acct_id");
+		String acctId = JsonUtil.getJsonValue(appSubscriber,"acct_id");	
 		
 		if(!appServiceEngine.checkInstanceScope(acctId)){
 			appSubscriber.put("dispatch_direction", "+");		
@@ -71,7 +71,7 @@ public class AppInstLoadHandler extends AppServiceEngineHandlerImpl<JsonObject> 
 			Integer size = 1;
 			AppInstRunFuture innerRunFuture = new AppInstRunFuture();			
 			innerRunFuture.RunFuture = Future.future();
-			appServiceEngine.runAppInstance(msg.body(), innerRunFuture, runningCount, size);
+			appServiceEngine.runAppInstance(appSubscriber, innerRunFuture, runningCount, size);
 			innerRunFuture.RunFuture.setHandler(run -> {    		
 	    		if (run.succeeded()) {
 	    			if(appServiceEngine.isWebServerHost()){   				
@@ -92,7 +92,7 @@ public class AppInstLoadHandler extends AppServiceEngineHandlerImpl<JsonObject> 
 	public void handle2(OtoCloudBusMessage<JsonObject> msg) {
 		JsonObject appSubscriber = msg.body();
 		
-		String acctId = JsonUtil.getJsonValue(appSubscriber,"org_acct_id");
+		String acctId = JsonUtil.getJsonValue(appSubscriber,"acct_id");
 		
 		if(!appServiceEngine.checkInstanceScope(acctId)){
 			String dispatchChainDirection = appSubscriber.getString("dispatch_direction");
@@ -113,7 +113,7 @@ public class AppInstLoadHandler extends AppServiceEngineHandlerImpl<JsonObject> 
 			Integer size = 1;
 			AppInstRunFuture innerRunFuture = new AppInstRunFuture();			
 			innerRunFuture.RunFuture = Future.future();
-			appServiceEngine.runAppInstance(msg.body(), innerRunFuture, runningCount, size);
+			appServiceEngine.runAppInstance(appSubscriber, innerRunFuture, runningCount, size);
 			innerRunFuture.RunFuture.setHandler(run -> {    		
 	    		if (run.succeeded()) {
 	    			if(appServiceEngine.isWebServerHost()){   				
