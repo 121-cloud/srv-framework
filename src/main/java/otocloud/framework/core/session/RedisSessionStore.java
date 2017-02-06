@@ -31,6 +31,10 @@ public class RedisSessionStore implements SessionStore {
 		this.vertx = vertx;
 	}
 	
+	public int getExpireSeconds() {
+		return expireSeconds;
+	}
+	
 	@Override
 	public void get(String sessionId, Handler<AsyncResult<Session>> retSession){
 		Future<Session> retFuture = Future.future();

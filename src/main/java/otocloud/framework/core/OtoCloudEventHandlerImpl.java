@@ -133,8 +133,8 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
  
 	protected void authVerify(JsonObject session, Future<Boolean> isOk){
     	
-		Long userId = session.getLong("user_id", 0L);
-		Long acctId = session.getLong("acct_id", 0L);
+		Long userId = Long.parseLong(session.getString("user_id"));
+		Long acctId = Long.parseLong(session.getString("acct_id"));
 		if(userId > 0){
 			if(acctId > 0){
 				Long appId = componentImpl.getService().getAppId();		

@@ -15,4 +15,6 @@ import io.vertx.core.Handler;
 public interface SessionStore {	
 	void get(String sessionId, Handler<AsyncResult<Session>> retSession);
 	void create(String sessionId, Handler<AsyncResult<Session>> retSession);
+	
+	int getExpireSeconds();
 }
