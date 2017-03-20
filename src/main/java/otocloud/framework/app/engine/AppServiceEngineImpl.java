@@ -54,7 +54,7 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 
 	protected String appDesc;
 	protected String masterRole;
-	protected JsonArray appInstScope;
+	//protected JsonArray appInstScope;
 	protected int distributedNodeIndex = 0;
 	
     protected OtoCloudAppDataSource otoCloudAppDataSource;
@@ -163,17 +163,17 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 
 		isolationVertxPool = srvCfg.getBoolean("isolation_vertx_pool", true);
 		
-		if(srvCfg.containsKey(AppConfiguration.MASTER_ROLE)){
+/*		if(srvCfg.containsKey(AppConfiguration.MASTER_ROLE)){
 			masterRole = srvCfg.getString(AppConfiguration.MASTER_ROLE);	
-		}
+		}*/
 		appDesc = srvCfg.getString(AppConfiguration.APP_DESC_KEY);	
 		if(srvCfg.containsKey(AppConfiguration.WEBSERVER_HOST)){
 			isWebServerHost = srvCfg.getBoolean(AppConfiguration.WEBSERVER_HOST);
 		}else {
 			isWebServerHost = false;
 		}
-		if(srvCfg.containsKey(AppConfiguration.APP_INST_SCOPE))
-			appInstScope = srvCfg.getJsonArray(AppConfiguration.APP_INST_SCOPE);
+/*		if(srvCfg.containsKey(AppConfiguration.APP_INST_SCOPE))
+			appInstScope = srvCfg.getJsonArray(AppConfiguration.APP_INST_SCOPE);*/
 		if(srvCfg.containsKey("distributed_node_index"))
 			distributedNodeIndex = srvCfg.getInteger("distributed_node_index");
 		
@@ -249,8 +249,8 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 	public List<OtoCloudEventHandlerRegistry> createHandlers(){ 
 		List<OtoCloudEventHandlerRegistry> ret = new ArrayList<OtoCloudEventHandlerRegistry>();
 		
-		OtoCloudEventHandlerRegistry appInstLoadHandler = new AppInstLoadHandler(this);
-		ret.add(appInstLoadHandler);
+/*		OtoCloudEventHandlerRegistry appInstLoadHandler = new AppInstLoadHandler(this);
+		ret.add(appInstLoadHandler);*/
 		OtoCloudEventHandlerRegistry appStatusCtrlHandler = new AppStatusCtrlHandler(this);
 		ret.add(appStatusCtrlHandler);
 		OtoCloudEventHandlerRegistry appStatusQueryHandler = new AppStatusQueryHandler(this);
@@ -401,7 +401,7 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 		
 		//JsonArray appSubscribers = srvCfg.getJsonArray("app_subscribers", new JsonArray());		
 		
-		getAppSubscribers(srvCfg.getJsonArray(AppConfiguration.APP_INST_SCOPE, null), done->{
+		getAppSubscribers(done->{
 			  if (done.succeeded()) {				  
 				  List<JsonObject> result = done.result();				  
 				  if(result != null && result.size() > 0){					    
@@ -440,7 +440,7 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 		});				
 	}
 	
-	private static String buildAppInstScopeSQLCondition(JsonArray params) {
+/*	private static String buildAppInstScopeSQLCondition(JsonArray params) {
 		if (params == null || params.size() == 0)
 			return "";
 		List<String> singleConds = new ArrayList<String>();
@@ -484,22 +484,22 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 
 		paramStr.append(")");
 		return paramStr.toString();
-	}
+	}*/
 	
-	private void getAppSubscribers(JsonArray appInstScope, Handler<AsyncResult<List<JsonObject>>> done){
+	private void getAppSubscribers(/*JsonArray appInstScope,*/ Handler<AsyncResult<List<JsonObject>>> done){
 			
 		  Future<List<JsonObject>> retFuture = Future.future();
 		  retFuture.setHandler(done);
 		  
-		  String condition = buildAppInstScopeSQLCondition(appInstScope);
+		  //String condition = buildAppInstScopeSQLCondition(appInstScope);
 		  
 		  String querySql;
 		  
-		  if(condition == null || condition.isEmpty()){
-			  querySql = "SELECT acct_id,app_version_id FROM acct_app WHERE status='A' AND d_app_id=? AND app_version_id=? AND app_inst=?";
-		  }else{
-			  querySql = "SELECT acct_id,app_version_id FROM acct_app WHERE status='A' AND d_app_id=? AND app_version_id=? AND app_inst=? AND " + condition;
-		  }
+		  //if(condition == null || condition.isEmpty()){
+			  querySql = "SELECT acct_id,app_version_id FROM acct_app WHERE status='A' AND d_app_id=? AND app_version_id=? AND app_inst_group=?";
+		  /*}else{
+			  querySql = "SELECT acct_id,app_version_id FROM acct_app WHERE status='A' AND d_app_id=? AND app_version_id=? AND app_inst_group=? AND " + condition;
+		  }*/
 		  
 		  try{
 		  
@@ -519,7 +519,7 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 							conn.queryWithParams(querySql, new JsonArray()									
 									.add(srvCfg.getLong(AppConfiguration.APP_ID_KEY, 0L))
 									.add(srvCfg.getLong(AppConfiguration.APP_VERSION_ID_KEY, 0L))
-									.add(this.getRealServiceName()),
+									.add(srvCfg.getString(AppConfiguration.APP_INST_GROUP)),
 							  appSubRet->{								  
 								  if (appSubRet.succeeded()) {
 									  ResultSet result = appSubRet.result();
@@ -797,10 +797,11 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 	
 	@Override
 	public boolean checkInstanceScope(String acctId){
-		if(appInstScope == null)
-			return true;
+		if(appInstances == null)
+			return false;
+		return appInstances.containsKey(acctId);
 		
-		for(Object scope: appInstScope) {
+/*		for(Object scope: appInstScope) {
 			String scopeItem = (String)scope;			
 			String[] segStrings = scopeItem.split("~");
 			if (segStrings.length == 2) {
@@ -814,7 +815,7 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 			}			
 		}
 		
-		return false;
+		return false;*/
 	}
 	
 	@Override

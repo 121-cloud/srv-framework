@@ -94,6 +94,10 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		this();
 		setServiceName(srvName);
 	}
+	
+	public JsonObject getSrvCfg() {
+		return srvCfg;
+	}
 
 	@Override
 	public String getRealServiceName() {

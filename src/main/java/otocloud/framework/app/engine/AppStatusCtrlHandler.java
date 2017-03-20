@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.vertx.core.Future;
+import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.core.OtoCloudBusMessage;
 import io.vertx.core.json.JsonObject;
 
@@ -18,8 +19,8 @@ import io.vertx.core.json.JsonObject;
  */
 public class AppStatusCtrlHandler extends AppServiceEngineHandlerImpl<JsonObject> {
 
-	//{appid}.platform.appinst_status.control
-	public static final String APPINSTS_STATUS_CONTROL_BASE = "platform.appinst_status.control";//应用实例的启动/停止指令
+	//{appid}.{appGroup}.platform.appinst_status.control
+	public static String APPINSTS_STATUS_CONTROL_BASE = "platform.appinst_status.control";//应用实例的启动/停止指令
 	
 	/**
 	 * Constructor.
@@ -28,7 +29,10 @@ public class AppStatusCtrlHandler extends AppServiceEngineHandlerImpl<JsonObject
 	 */
 	public AppStatusCtrlHandler(AppServiceEngineImpl appServiceEngine) {
 		super(appServiceEngine);
-		// TODO Auto-generated constructor stub
+		
+		APPINSTS_STATUS_CONTROL_BASE = appServiceEngine.getSrvCfg().getString(AppConfiguration.APP_INST_GROUP) 
+				+ "." + APPINSTS_STATUS_CONTROL_BASE;
+		
 	}
 
 	/**
@@ -38,13 +42,13 @@ public class AppStatusCtrlHandler extends AppServiceEngineHandlerImpl<JsonObject
 	public void handle(OtoCloudBusMessage<JsonObject> msg) {
 
 		JsonObject body = msg.body();
-		String appInst = body.getString("app_inst");
+		//String appInst = body.getString("app_inst");
 		String status = body.getString("status");
-		String account = null;
-		if(body.containsKey("account"))
+		String account = body.getString("account");
+/*		if(body.containsKey("account"))
 			account = body.getString("account");
-		
-		if(!appServiceEngine.checkInstanceScope(appInst)){
+*/		
+/*		if(!appServiceEngine.checkInstanceScope(appInst)){
 			body.put("dispatch_direction", "+");		
 			Future<Object> disFuture = Future.future();
 			dispatchHandleForAppInst(appInst, body, "+", disFuture);	
@@ -70,12 +74,14 @@ public class AppStatusCtrlHandler extends AppServiceEngineHandlerImpl<JsonObject
 	    		}
 	    	});
 			
-		}else{
-			internalHanle(msg, appInst,status,account);
-		}
+		}else{*/
+		
+			internalHanle(msg, status,account);
+/*		}*/
+			
     }
 
-	@Override
+/*	@Override
 	public void handle2(OtoCloudBusMessage<JsonObject> msg) {
 
 		JsonObject body = msg.body();
@@ -105,12 +111,13 @@ public class AppStatusCtrlHandler extends AppServiceEngineHandlerImpl<JsonObject
 		}
 
     }
-
-	private void internalHanle(OtoCloudBusMessage<JsonObject> msg, String appInst,String status,String account){
+*/
+	
+	private void internalHanle(OtoCloudBusMessage<JsonObject> msg, String status,String account){
 		JsonObject ret = new JsonObject();
 		Map<String, AppService> appInstances = appServiceEngine.getAppServiceInstances();
-		if(appInstances.containsKey(appInst)){
-			AppService appServiceInst = appInstances.get(appInst);
+		if(appInstances.containsKey(account)){
+			AppService appServiceInst = appInstances.get(account);
 			try{
 				Future<Void> future = Future.future();
 				if(status.equals("stop")){
@@ -152,9 +159,9 @@ public class AppStatusCtrlHandler extends AppServiceEngineHandlerImpl<JsonObject
 				innerRunFuture.RunFuture = Future.future();
 				
 				JsonObject loadAppInstCmd = new JsonObject();
-				loadAppInstCmd.put("instid", appInst);
-				loadAppInstCmd.put("account", account);
-				
+				loadAppInstCmd.put("app_version_id", appServiceEngine.getAppVersion());
+				loadAppInstCmd.put("acct_id", account);
+								
 				AtomicInteger runningCount = new AtomicInteger(0);
 				Integer size = 1;
 				

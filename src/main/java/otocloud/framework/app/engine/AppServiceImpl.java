@@ -10,13 +10,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.hazelcast.config.Config;
-
-
-
-
-
-
-
 import otocloud.common.OtoConfiguration;
 import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.app.common.AppInstanceContext;
@@ -223,7 +216,7 @@ public abstract class AppServiceImpl extends OtoCloudServiceImpl implements AppS
 		AppInitActivityImpl initActivity = createAppInitActivity();
 		if(initActivity != null)
 			retList.add(initActivity);
-		
+			
 		BizObjectQueryProxy bizObjectQueryProxy = new BizObjectQueryProxy();
 		retList.add(bizObjectQueryProxy);
 		

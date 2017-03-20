@@ -82,4 +82,6 @@ public interface OtoCloudService extends OtoCloudServiceLifeCycle {
 	//ClassLoader getComponentClassLoader(String compName);
 	
     String buildEventAddress(String addressBase);
+    
+    JsonObject getSrvCfg();
 }

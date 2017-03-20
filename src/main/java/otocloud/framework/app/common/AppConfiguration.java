@@ -17,8 +17,7 @@ public class AppConfiguration extends OtoConfiguration {
 	public static final String APP_VERSION_ID_KEY = "version_id";//应用版本ID
 	public static final String SERVICE_NAME_KEY = "service_name";	
 	public static final String APP_DESC_KEY = "app_desc";//APP名称描述
-	public static final String MASTER_ROLE = "master_role";//APP名称描述	
-	public static final String APP_INST_SCOPE = "app_inst_scope";//应用实例范围	
+	public static final String APP_INST_GROUP = "app_inst_group";//应用实例分组
 	public static final String APPINST_CONTEXT = "app_context"; 
 	
 	public static final String INST_COMMON ="inst_common"; //应用实例公共配置

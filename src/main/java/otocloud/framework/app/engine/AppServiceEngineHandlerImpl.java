@@ -37,12 +37,12 @@ public abstract class AppServiceEngineHandlerImpl<T> implements OtoCloudEventHan
 		//consumer = eventBus.<T>consumer(getRealAddress(), this::internalHandle);
 		eventBus.<T>consumer(getRealAddress(), this::internalHandle);
 		
-		Integer disNoInteger = appServiceEngine.getDistributedNodeIndex();
+/*		Integer disNoInteger = appServiceEngine.getDistributedNodeIndex();
 		if(disNoInteger > 0){
 			String address = appServiceEngine.getRealServiceName() + "." + getEventAddress() + "." + disNoInteger.toString();		    	
 	    	//consumerForDistribution = eventBus.<T>consumer(address, this::internalHandle2);
 	    	eventBus.<T>consumer(address, this::internalHandle2);
-		}
+		}*/
 	}
     
 	@Override
@@ -88,18 +88,18 @@ public abstract class AppServiceEngineHandlerImpl<T> implements OtoCloudEventHan
 	}   
 	
 
-	public void internalHandle2(Message<T> msg) {
+/*	public void internalHandle2(Message<T> msg) {
 		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);
 		if(otoMsg.needAsyncReply()){
 			msg.reply("ok");
 		}
 		handle2(otoMsg);		
-	}
+	}*/
    
-	public void handle2(OtoCloudBusMessage<T> msg) {
-    }
+/*	public void handle2(OtoCloudBusMessage<T> msg) {
+    }*/
     
-    protected void dispatchHandleForAppInst(String acctId, T body, String dispatchChainDirection, Future<Object> ret){
+/*    protected void dispatchHandleForAppInst(String acctId, T body, String dispatchChainDirection, Future<Object> ret){
 
 		Integer disNoInteger = appServiceEngine.getDistributedNodeIndex();
 		if(dispatchChainDirection.equals("+")){
@@ -128,7 +128,7 @@ public abstract class AppServiceEngineHandlerImpl<T> implements OtoCloudEventHan
 					}
 		});	
 
-    }
+    }*/
     
     @Override
     public HandlerDescriptor getHanlderDesc(){  	
