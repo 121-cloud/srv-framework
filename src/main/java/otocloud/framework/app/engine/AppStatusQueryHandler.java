@@ -8,6 +8,7 @@ import java.util.Map;
 import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.common.OtoCloudServiceState;
 import otocloud.framework.core.OtoCloudBusMessage;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 
 
@@ -28,8 +29,14 @@ public class AppStatusQueryHandler extends AppServiceEngineHandlerImpl<JsonObjec
 	 */
 	public AppStatusQueryHandler(AppServiceEngineImpl appServiceEngine) {
 		super(appServiceEngine);
+	}
+	
+	@Override
+    public void register(EventBus eventBus) {
 		GET_APPINSTSTATUS_BASE = appServiceEngine.getSrvCfg().getString(AppConfiguration.APP_INST_GROUP) 
 				+ "." + GET_APPINSTSTATUS_BASE;
+		
+		super.register(eventBus);
 
 	}
 

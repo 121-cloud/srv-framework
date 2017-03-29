@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.vertx.core.Future;
 import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.core.OtoCloudBusMessage;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 
 
@@ -28,11 +29,16 @@ public class AppStatusCtrlHandler extends AppServiceEngineHandlerImpl<JsonObject
 	 * @param appServiceEngine
 	 */
 	public AppStatusCtrlHandler(AppServiceEngineImpl appServiceEngine) {
-		super(appServiceEngine);
-		
+		super(appServiceEngine);	
+	}
+	
+	@Override
+    public void register(EventBus eventBus) {
 		APPINSTS_STATUS_CONTROL_BASE = appServiceEngine.getSrvCfg().getString(AppConfiguration.APP_INST_GROUP) 
 				+ "." + APPINSTS_STATUS_CONTROL_BASE;
 		
+		super.register(eventBus);
+
 	}
 
 	/**

@@ -6,11 +6,16 @@ import otocloud.framework.core.OtoCloudBusMessageImpl;
 import otocloud.framework.core.OtoCloudEventDescriptor;
 import otocloud.framework.core.HandlerDescriptor;
 import otocloud.framework.core.OtoCloudEventHandler;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import otocloud.framework.core.OtoCloudBusMessage;
 //import io.vertx.core.eventbus.MessageConsumer;
+import otocloud.framework.core.session.Session;
+import otocloud.framework.core.session.SessionStore;
 
 
 
@@ -47,12 +52,68 @@ public abstract class AppServiceEngineHandlerImpl<T> implements OtoCloudEventHan
     
 	@Override
 	public void internalHandle(Message<T> msg) {
-		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);
+/*		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);
 		if(otoMsg.needAsyncReply()){
 			msg.reply("ok");
 		}
-		handle(otoMsg);		
+		handle(otoMsg);	*/	
+		
+		System.out.println("服务框架 收到请求消息！");
+		
+		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);	
+		
+		sessionHandle(otoMsg, next->{
+			if(next.succeeded()){
+		    	toHandle(otoMsg);
+			}else{
+				Throwable err = next.cause();
+				//componentImpl.getLogger().error(err.getMessage(), err);
+				otoMsg.fail(100, err.getMessage());
+			}
+		});
 	}
+	
+	private void toHandle(OtoCloudBusMessage<T> otoMsg){
+		if(otoMsg.needAsyncReply()){
+			otoMsg.reply("ok");
+		}
+		handle(otoMsg);
+	}
+	
+	private void sessionHandle(OtoCloudBusMessage<T> msg, Handler<AsyncResult<Void>> next){
+		Future<Void> future = Future.future();
+		future.setHandler(next);
+		
+		MultiMap headers = msg.headers();
+		if(headers != null && headers.contains("token")){
+			String token = headers.get("token");
+			SessionStore sessionStore = appServiceEngine.getSessionStore();
+			if(sessionStore != null){
+				sessionStore.get(token, sessionRet->{
+					if(sessionRet.succeeded()){
+						Session session = sessionRet.result();
+						session.getAll(retHandler->{
+							if(retHandler.succeeded()){
+								msg.setSession(retHandler.result());
+							}
+							future.complete();
+							session.close(closeHandler->{							
+							});
+						});	
+					}else{
+						Throwable err = sessionRet.cause();
+						appServiceEngine.getLogger().error(err.getMessage(), err);
+						future.fail(err);
+					}
+				});				
+			}else{
+				future.complete();
+			}
+		}else{
+			future.complete();
+		}
+	}
+	
 
 	@Override
 	public String getRealAddress() {

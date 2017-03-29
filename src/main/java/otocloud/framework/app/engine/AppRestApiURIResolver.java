@@ -31,13 +31,13 @@ public class AppRestApiURIResolver extends AppServiceEngineHandlerImpl<JsonObjec
 		
 		this.appServiceEngine.getLogger().info("API地址转换请求:" + body.toString());
 		
-		JsonObject session = body.getJsonObject(otocloud.common.webserver.MessageBodyConvention.SESSION, null);
+		JsonObject session = msg.getSession();//body.getJsonObject(otocloud.common.webserver.MessageBodyConvention.SESSION, null);
 		if(session == null){
 			msg.reply(new JsonObject().put("realAddress", body.getString("addressPattern")));
 			return;
 		}		
-		Integer account = session.getInteger(otocloud.common.webserver.MessageBodyConvention.SESSION_ACCT_ID, -1);
-		if(account == -1){
+		Long account = Long.parseLong(session.getString(otocloud.common.webserver.MessageBodyConvention.SESSION_ACCT_ID));
+		if(account == -1L){
 			msg.reply(new JsonObject().put("realAddress", body.getString("addressPattern")));
 			return;
 		}
