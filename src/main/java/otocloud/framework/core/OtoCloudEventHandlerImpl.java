@@ -178,13 +178,40 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 															  return;
 														  }
 													  }
-													  componentImpl.getLogger().info("用户:" + userId + "无权限访问" + this.getRealAddress());
+													  
+													String apiDependonSql = "SELECT count(dependon_app_activity_id) as num FROM view_acct_app_activity_dependon WHERE acct_id=? AND dependon_app_activity_code=?";
+													conn.queryWithParams(apiDependonSql, new JsonArray()									
+															.add(acctId)
+															.add(componentName),
+														apiDependonRet->{	
+															if (apiDependonRet.succeeded()) {
+												            	ResultSet resultSet = apiDependonRet.result();
+												            	List<JsonObject> retDataArrays = resultSet.getRows();
+												            	if(retDataArrays != null && retDataArrays.size() > 0){
+												            		Long num = retDataArrays.get(0).getLong("num");
+												            		if(num > 0){
+												            			isOk.complete(true);
+												            			return;
+												            		}									
+												            	}
+											            		componentImpl.getLogger().info("用户:" + userId + "无权限访问" + this.getRealAddress());
+												            	isOk.complete(false);												            	
+															}else{
+												  	    		  Throwable err = apiDependonRet.cause();
+												  	    		  String replyMsg = err.getMessage();
+												  	    		  componentImpl.getLogger().error("权限验证出错：" + replyMsg, err);								  	    		  
+												  	    		  isOk.complete(false);
+															}
+														}
+													  );													  
+													  
 												  }else{
 									  	    		  Throwable err = appSubRet.cause();
 									  	    		  String replyMsg = err.getMessage();
-									  	    		  componentImpl.getLogger().error("权限验证出错：" + replyMsg, err);								  	    		  
+									  	    		  componentImpl.getLogger().error("权限验证出错：" + replyMsg, err);	
+									  	    		  isOk.complete(false);
 												  }
-												  isOk.complete(false);
+												  
 											  }finally{
 												  closeDBConnect(conn);
 											  }
