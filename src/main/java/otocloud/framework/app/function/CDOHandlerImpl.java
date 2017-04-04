@@ -5,6 +5,7 @@ package otocloud.framework.app.function;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
@@ -27,32 +28,32 @@ public abstract class CDOHandlerImpl<T> extends ActionHandlerImpl<T> implements 
     }
 	
 	@Override
-    public void recordCDO(BizRoleDirection roleDirection, String partnerAcct, JsonObject factData, String boId, JsonObject actor, Handler<AsyncResult<String>> next) {
+    public void recordCDO(String bizUnit, BizRoleDirection roleDirection, String partnerAcct, String partnerBizUnit, JsonObject factData, String boId, JsonObject actor, Handler<AsyncResult<String>> next) {
 		ActionDescriptor actionDesc = getActionDesc();
 		BizStateSwitchDesc stateSwitchDesc = actionDesc.getBizStateSwitch();
 		String preStatus = stateSwitchDesc.getFromState();
 		String newState = stateSwitchDesc.getToState();
 
-		recordCDO(roleDirection, partnerAcct, this.appActivity.getBizObjectType(), factData, boId, 
+		recordCDO(bizUnit, roleDirection, partnerAcct, partnerBizUnit, this.appActivity.getBizObjectType(), factData, boId, 
 				preStatus, newState, stateSwitchDesc.needPublishEvent(), stateSwitchDesc.isContainsFactData(), actor, next);
     }
     
 	
 	@Override
-	public void recordCDO(BizRoleDirection roleDirection, String partnerAcct,  String bizObjectType, JsonObject factData, String boId, JsonObject actor, Handler<AsyncResult<String>> next){
+	public void recordCDO(String bizUnit, BizRoleDirection roleDirection, String partnerAcct, String partnerBizUnit,  String bizObjectType, JsonObject factData, String boId, JsonObject actor, Handler<AsyncResult<String>> next){
 	
 		ActionDescriptor actionDesc = getActionDesc();
 		BizStateSwitchDesc stateSwitchDesc = actionDesc.getBizStateSwitch();
 		String preStatus = stateSwitchDesc.getFromState();
 		String newState = stateSwitchDesc.getToState();
 
-		recordCDO(roleDirection, partnerAcct, bizObjectType, factData, boId, 
+		recordCDO(bizUnit, roleDirection, partnerAcct, partnerBizUnit, bizObjectType, factData, boId, 
 				preStatus, newState, stateSwitchDesc.needPublishEvent(), stateSwitchDesc.isContainsFactData(), actor, next);
 	}
 
 	
 	@Override
-	public void recordCDO(BizRoleDirection roleDirection, String partnerAcct, String bizObjectType, JsonObject factData, String boId, String preState, String newState, boolean publishStateSwitchEvent, boolean containsFactData, JsonObject actor, Handler<AsyncResult<String>> next){
+	public void recordCDO(String bizUnit, BizRoleDirection roleDirection, String partnerAcct, String partnerBizUnit, String bizObjectType, JsonObject factData, String boId, String preState, String newState, boolean publishStateSwitchEvent, boolean containsFactData, JsonObject actor, Handler<AsyncResult<String>> next){
 		
 		MongoClient mongoClient = this.appActivity.getCDODatasource().getMongoClient();
     	
@@ -76,14 +77,18 @@ public abstract class CDOHandlerImpl<T> extends ActionHandlerImpl<T> implements 
 		String toAcctTemp;
 		if(roleDirection == BizRoleDirection.FROM){
 			boData.put("from_account", account);
+			boData.put("from_biz_unit", bizUnit==null?"":bizUnit);
 			boData.put("to_account", partnerAcct);
+			boData.put("to_biz_unit", partnerBizUnit==null?"":partnerBizUnit);
 			boData.put("from_actor", actor);
 			boData.put("update_direction", "from");
 			fromAcctTemp = this.appActivity.getAppInstContext().getAccount();
 			toAcctTemp = partnerAcct;
 		}else {			
 			boData.put("from_account", partnerAcct);
+			boData.put("from_biz_unit", partnerBizUnit==null?"":partnerBizUnit);
 			boData.put("to_account", account);
+			boData.put("to_biz_unit", bizUnit==null?"":bizUnit);
 			boData.put("to_actor", actor);
 			boData.put("update_direction", "to");
 			fromAcctTemp = partnerAcct;
@@ -312,13 +317,15 @@ public abstract class CDOHandlerImpl<T> extends ActionHandlerImpl<T> implements 
      * TODO 更新指定状态数据，不触发状态变化事件
      */
 	@Override
-	public void updateCDO(BizRoleDirection roleDirection, String partnerAcct, String bizObjectType, JsonObject query, JsonObject update, String status,		
+	public void updateCDO(String bizUnit, String partnerBizUnit, BizRoleDirection roleDirection, String partnerAcct, String bizObjectType, JsonObject query, JsonObject update, String status,		
 			JsonObject actor, Handler<AsyncResult<JsonObject>> next){		
 		
 		MongoClient mongoClient = appActivity.getCDODatasource().getMongoClient();
     	
 		Future<JsonObject> ret = Future.future();
 		ret.setHandler(next);	
+		
+		JsonObject newQuery = query;
 		
 		String fromAcctTemp;
 		String toAcctTemp;
@@ -327,18 +334,37 @@ public abstract class CDOHandlerImpl<T> extends ActionHandlerImpl<T> implements 
 			toAcctTemp = partnerAcct;
 			update.put("from_actor", actor);
 			update.put("update_direction", "from");
+			
+			if(bizUnit == null || bizUnit.isEmpty()){			
+			}else{
+				newQuery = new JsonObject();
+				newQuery.put("$and", new JsonArray()
+					.add(query)
+					.add(new JsonObject().put("from_biz_unit", bizUnit))
+					.add(new JsonObject().put("to_biz_unit", partnerBizUnit)));
+			}
 		}else {			
 			fromAcctTemp = partnerAcct;
 			toAcctTemp = this.appActivity.getAppInstContext().getAccount();
 			update.put("to_actor", actor);
 			update.put("update_direction", "to");
+			
+			if(bizUnit == null || bizUnit.isEmpty()){			
+			}else{
+				newQuery = new JsonObject();
+				newQuery.put("$and", new JsonArray()
+					.add(query)
+					.add(new JsonObject().put("from_biz_unit", partnerBizUnit))
+					.add(new JsonObject().put("to_biz_unit", bizUnit)));
+			}
 		}
 		final String fromAcct = fromAcctTemp;
 		final String toAcct = toAcctTemp;
 		
 		JsonObject updateJs = new JsonObject().put("$set", update);
+		
 
-	    mongoClient.updateCollection(getCDOTableName(bizObjectType, status, fromAcct, toAcct), query, updateJs,
+	    mongoClient.updateCollection(getCDOTableName(bizObjectType, status, fromAcct, toAcct), newQuery, updateJs,
 	    		updateRet -> {
 		  if (updateRet.succeeded()) {
 			  ret.complete(updateRet.result().toJson());

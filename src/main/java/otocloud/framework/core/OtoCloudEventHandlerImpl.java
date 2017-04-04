@@ -171,7 +171,7 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 														  if(retData.size() > 0){
 															  JsonObject retItem = retData.get(0);
 															  session.put("biz_unit_id", retItem.getLong("d_acct_biz_unit_id"));
-															  session.put("is_global_bu", retItem.getLong("d_is_global_bu"));
+															  session.put("is_global_bu", retItem.getInteger("d_is_global_bu")==1?true:false);
 															  session.put("biz_unit_post_id", retItem.getLong("acct_biz_unit_post_id"));
 															  session.put("app_activity_id", retItem.getLong("d_app_activity_id"));															  
 															  

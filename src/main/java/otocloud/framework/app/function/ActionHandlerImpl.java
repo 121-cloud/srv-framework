@@ -178,9 +178,9 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		boData.put("current_state", newState);
 		boData.put("next_state", "");
 		boData.put("account", account);	
-		if(bizUnit != null && !bizUnit.isEmpty()){
-			boData.put("biz_unit", bizUnit);	
-		}
+		//if(bizUnit != null && !bizUnit.isEmpty()){
+			boData.put("biz_unit", bizUnit==null?"":bizUnit);	
+		//}
 		boData.put("ts", getNowDate());		
 		boData.put("actor", actor);
 		if(factData != null){	
@@ -530,7 +530,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 				    	JsonObject insert = new JsonObject();
 				    	insert.put("latest_state", bizStatus);
 				    	insert.put("account", account);
-				    	insert.put("biz_unit", bizUnit);
+				    	insert.put("biz_unit", bizUnit==null?"":bizUnit);
 				    	insert.put("bo_id", boId);
 				    	insert.put("bo_type", bizObjectType);				    	
 				    	

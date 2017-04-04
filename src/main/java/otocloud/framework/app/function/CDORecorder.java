@@ -20,16 +20,16 @@ public interface CDORecorder extends FactDataRecorder{
 	
 	JsonObject buildStubForCDO(JsonObject factData, String boId, String partnerAcct);
 	
-	void recordCDO(BizRoleDirection roleDirection, String partnerAcct, JsonObject factData, String boId, JsonObject actor, Handler<AsyncResult<String>> next);
-	void recordCDO(BizRoleDirection roleDirection, String partnerAcct,  String bizObjectType, JsonObject factData, String boId, JsonObject actor, Handler<AsyncResult<String>> next);
-	void recordCDO(BizRoleDirection roleDirection, String partnerAcct,  String bizObjectType, JsonObject factData, String boId, String preState, String newState, boolean publishStateSwitchEvent, boolean containsFactData, JsonObject actor, Handler<AsyncResult<String>> next);
+	void recordCDO(String bizUnit, BizRoleDirection roleDirection, String partnerAcct, String partnerBizUnit, JsonObject factData, String boId, JsonObject actor, Handler<AsyncResult<String>> next);
+	void recordCDO(String bizUnit, BizRoleDirection roleDirection, String partnerAcct, String partnerBizUnit,  String bizObjectType, JsonObject factData, String boId, JsonObject actor, Handler<AsyncResult<String>> next);
+	void recordCDO(String bizUnit, BizRoleDirection roleDirection, String partnerAcct, String partnerBizUnit,  String bizObjectType, JsonObject factData, String boId, String preState, String newState, boolean publishStateSwitchEvent, boolean containsFactData, JsonObject actor, Handler<AsyncResult<String>> next);
 	
     /**
      * TODO 更新最新状态数据，不触发状态变化事件
      */	
 	void updateLatestCDO(BizRoleDirection roleDirection, String partnerAcct, String bizObjectType, JsonObject factData, String boId,			
 			JsonObject actor, Handler<AsyncResult<String>> next);
-	void updateCDO(BizRoleDirection roleDirection, String partnerAcct, String bizObjectType, JsonObject query, JsonObject update, String status,		
+	void updateCDO(String bizUnit, String partnerBizUnit, BizRoleDirection roleDirection, String partnerAcct, String bizObjectType, JsonObject query, JsonObject update, String status,		
 			JsonObject actor, Handler<AsyncResult<JsonObject>> next);
 	void updateCDO(BizRoleDirection roleDirection, String partnerAcct, String bizObjectType, JsonObject factData, String boId,	String status,		
 			JsonObject actor, Handler<AsyncResult<String>> next);
