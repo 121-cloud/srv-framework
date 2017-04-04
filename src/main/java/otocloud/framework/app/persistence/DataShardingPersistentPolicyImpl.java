@@ -30,7 +30,7 @@ public class DataShardingPersistentPolicyImpl implements DataPersistentPolicy {
 	}
 	
 	@Override
-	public JsonObject getQueryConditionForMongo(String account, JsonObject query){
+	public JsonObject getQueryConditionForMongo(String account, String bizUnit, JsonObject query){
 		return query;
 	}
 	

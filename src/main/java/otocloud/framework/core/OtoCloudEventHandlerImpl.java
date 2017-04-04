@@ -140,7 +140,7 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 				Long appId = componentImpl.getService().getAppId();		
 				if(appId > 0){
 					String componentName = componentImpl.getName();
-					String querySql = "SELECT d_acct_biz_unit_id,acct_biz_unit_post_id,d_app_activity_id FROM view_user_activity WHERE auth_user_id=? AND acct_id=? AND d_app_id=? AND d_app_activity_code=? limit 1";
+					String querySql = "SELECT d_acct_biz_unit_id,d_is_global_bu,acct_biz_unit_post_id,d_app_activity_id FROM view_user_activity WHERE auth_user_id=? AND acct_id=? AND d_app_id=? AND d_app_activity_code=? limit 1";
 					
 					  try{
 						  
@@ -171,8 +171,9 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 														  if(retData.size() > 0){
 															  JsonObject retItem = retData.get(0);
 															  session.put("biz_unit_id", retItem.getLong("d_acct_biz_unit_id"));
+															  session.put("is_global_bu", retItem.getLong("d_is_global_bu"));
 															  session.put("biz_unit_post_id", retItem.getLong("acct_biz_unit_post_id"));
-															  session.put("app_activity_id", retItem.getLong("d_app_activity_id"));														  
+															  session.put("app_activity_id", retItem.getLong("d_app_activity_id"));															  
 															  
 															  isOk.complete(true);														  
 															  return;

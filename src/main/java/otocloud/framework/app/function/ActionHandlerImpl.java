@@ -116,7 +116,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 	}    */
 	
 	@Override
-    public void recordFactData(JsonObject factData,
+    public void recordFactData(String bizUnit, JsonObject factData,
 			String boId, JsonObject actor, 
 			Handler<AsyncResult<String>> next) {
 		ActionDescriptor actionDesc = getActionDesc();
@@ -124,12 +124,12 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		String preStatus = stateSwitchDesc.getFromState();
 		String newState = stateSwitchDesc.getToState();
 
-		recordFactData(this.appActivity.getBizObjectType(), factData, boId, 
+		recordFactData(bizUnit, this.appActivity.getBizObjectType(), factData, boId, 
 				preStatus, newState, stateSwitchDesc.needPublishEvent(), stateSwitchDesc.isContainsFactData(), actor, null, next);
     }
     
     @Override
-    public void recordFactData(String bizObjectType, JsonObject factData,
+    public void recordFactData(String bizUnit, String bizObjectType, JsonObject factData,
 			String boId, JsonObject actor, MongoClient mongoCli,
 			Handler<AsyncResult<String>> next) {
 		ActionDescriptor actionDesc = getActionDesc();
@@ -137,7 +137,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		String preStatus = stateSwitchDesc.getFromState();
 		String newState = stateSwitchDesc.getToState();
 
-		recordFactData(bizObjectType, factData, boId, 
+		recordFactData(bizUnit, bizObjectType, factData, boId, 
 				preStatus, newState, stateSwitchDesc.needPublishEvent(), stateSwitchDesc.isContainsFactData(), actor, mongoCli, next);
     }
 	
@@ -148,7 +148,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * TODO 对于传递bo_id，则返回生成的_id，对于不传递bo_id的则返回新增的_id作为bo_id
      */
 	@Override
-	public void recordFactData(String bizObjectType, JsonObject factData, String boId,
+	public void recordFactData(String bizUnit, String bizObjectType, JsonObject factData, String boId,
 			String preState, String newState, boolean publishStateSwitchEvent, boolean containsFactData,
 			JsonObject actor, MongoClient mongoCli, Handler<AsyncResult<String>> next){
 		MongoClient mongoCliTemp = mongoCli;
@@ -177,7 +177,10 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		boData.put("previous_state", preState);
 		boData.put("current_state", newState);
 		boData.put("next_state", "");
-		boData.put("account", account);		
+		boData.put("account", account);	
+		if(bizUnit != null && !bizUnit.isEmpty()){
+			boData.put("biz_unit", bizUnit);	
+		}
 		boData.put("ts", getNowDate());		
 		boData.put("actor", actor);
 		if(factData != null){	
@@ -223,10 +226,10 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 								  factData.put("bo_id", _id);
 								  if (preState == null || preState.length() == 0) {
 									  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
-									  this.recordDataOfLatestState(bizObjectType, preState, newState, _id, factData, mongoClient, ret);
+									  this.recordDataOfLatestState(bizUnit, bizObjectType, preState, newState, _id, factData, mongoClient, ret);
 								  } else {
 									  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
-									  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, _id, mongoClient, ret);
+									  this.updateNextStateFiledOfPreviousTable(bizUnit, bizObjectType, preState, newState, factData, _id, mongoClient, ret);
 								  }
 								  if(publishStateSwitchEvent){
 									  JsonObject eventBO = null;
@@ -246,10 +249,10 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		
 						  if (preState == null || preState.length() == 0) {
 							  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
-							  this.recordDataOfLatestState(bizObjectType, preState, newState, boId, factData, mongoClient, ret);
+							  this.recordDataOfLatestState(bizUnit, bizObjectType, preState, newState, boId, factData, mongoClient, ret);
 						  } else {
 							  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
-							  this.updateNextStateFiledOfPreviousTable(bizObjectType, preState, newState, factData, boId, mongoClient, ret);
+							  this.updateNextStateFiledOfPreviousTable(bizUnit, bizObjectType, preState, newState, factData, boId, mongoClient, ret);
 						  }
 						  if(publishStateSwitchEvent){
 							  JsonObject eventBO = null;
@@ -285,10 +288,10 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 								  //String id = res.result();					
 								  if (preStateTmp == null || preStateTmp.length() == 0) {
 									  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
-									  this.recordDataOfLatestState(bizObjectType, preStateTmp, newState, boId, latestfactData, mongoClient, ret);
+									  this.recordDataOfLatestState(bizUnit, bizObjectType, preStateTmp, newState, boId, latestfactData, mongoClient, ret);
 								  } else {
 									  // 2. 更新前一个状态记录表（更新字段：下一个状态）。
-									  this.updateNextStateFiledOfPreviousTable(bizObjectType, preStateTmp, newState, latestfactData, boId, mongoClient, ret);
+									  this.updateNextStateFiledOfPreviousTable(bizUnit, bizObjectType, preStateTmp, newState, latestfactData, boId, mongoClient, ret);
 								  }
 								  if(publishStateSwitchEvent){
 									  JsonObject eventBO = null;
@@ -449,7 +452,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 	    });	
 	}
 	
-	private void updateNextStateFiledOfPreviousTable(String bizObjectType, String perStatus, String bizStatus, JsonObject factData, String boId, 
+	private void updateNextStateFiledOfPreviousTable(String bizUnit,String bizObjectType, String perStatus, String bizStatus, JsonObject factData, String boId, 
 			MongoClient mongoClient, Future<String> ret) {	  	
  		//String tableName = bizObjectType + "_" + perStatus;
 		//MongoClient mongoClient = getCurrentDataSource().getMongoClient();
@@ -458,7 +461,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		JsonObject query = new JsonObject();
 		query.put("bo_id", boId);
 		String account = this.appActivity.getAppInstContext().getAccount();
-		query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, query);
+		query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, null, query);
 		
     	JsonObject update = new JsonObject();
     	update.put("$set", new JsonObject().put("next_state", bizStatus).put("ts", getNowDate()));
@@ -466,7 +469,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 			  String replyMsg = "ok";
 			  if (result.succeeded()) {
 				  // 3. 向最新状态表中，更新（或者插入）对应的一条记录。
-				  this.recordDataOfLatestState(bizObjectType, perStatus, bizStatus, boId, factData, mongoClient, ret);
+				  this.recordDataOfLatestState(bizUnit, bizObjectType, perStatus, bizStatus, boId, factData, mongoClient, ret);
 			  } else {
 	    		  Throwable err = result.cause();
 	    		  replyMsg = err.getMessage();
@@ -486,7 +489,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 
 	
 	//@SuppressWarnings("unchecked")
-	private void recordDataOfLatestState(String bizObjectType, String preStatus, String bizStatus, String boId, 
+	private void recordDataOfLatestState(String bizUnit, String bizObjectType, String preStatus, String bizStatus, String boId, 
 			JsonObject factData, MongoClient mongoClient, Future<String> ret) {
 		//MongoClient mongoClient = getCurrentDataSource().getMongoClient();  
 
@@ -494,7 +497,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		boIdCond.put("bo_id", boId);
 		
 		String account = this.appActivity.getAppInstContext().getAccount();
-		JsonObject query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, boIdCond);
+		JsonObject query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, null, boIdCond);
    	
 		mongoClient.find(getBoLatestTableName(bizObjectType), query, res -> {
 			  if (res.succeeded()) {
@@ -527,6 +530,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 				    	JsonObject insert = new JsonObject();
 				    	insert.put("latest_state", bizStatus);
 				    	insert.put("account", account);
+				    	insert.put("biz_unit", bizUnit);
 				    	insert.put("bo_id", boId);
 				    	insert.put("bo_type", bizObjectType);				    	
 				    	
@@ -711,7 +715,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		query.put("bo_id", boId);
 		
 		String account = this.appActivity.getAppInstContext().getAccount();
-		query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, query);
+		query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, null, query);
    	
 		MongoClient mongoCliTemp = mongoCli;
 		if(mongoCli == null)
@@ -790,7 +794,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		query.put("bo_id", boId);
 		
 		String account = this.appActivity.getAppInstContext().getAccount();
-		query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, query);
+		query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, null, query);
 
 		
 		//String tbName = bizObjectType + "_" + boStatus;
@@ -849,13 +853,13 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * 按指定状态查询，不区分是否最终状态，只要有过此状态的数据都会查出来
      */
 	@Override
-	public void queryFactDataList(String bizObjectType, String boStatus, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
+	public void queryFactDataList(String bizUnit, String bizObjectType, String boStatus, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
 		
 		Future<List<JsonObject>> ret = Future.future();
 		ret.setHandler(next);
 		
 		String account = this.appActivity.getAppInstContext().getAccount();
-		JsonObject query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, queryCondition);
+		JsonObject query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, bizUnit, queryCondition);
 		
 		//MongoClient mongoClient = getCurrentDataSource().getMongoClient();
 		MongoClient mongoCliTemp = mongoCli;
@@ -930,9 +934,9 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
     /**
      * 查询对象
      */
-	public void queryBizDataList(String bizObjectType, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
+	public void queryBizDataList(String bizUnit, String bizObjectType, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
 		String account = this.appActivity.getAppInstContext().getAccount();		
-		pagingOptions.queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, pagingOptions.queryCond);
+		pagingOptions.queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, bizUnit, pagingOptions.queryCond);
 		
 		Future<JsonObject> ret = Future.future();
 		ret.setHandler(next);
@@ -1015,9 +1019,9 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * 按指定状态查询，支持分页，不区分是否最终状态，只要有过此状态的数据都会查出来
      */
 	@Override
-	public void queryFactDataList(String bizObjectType, String boStatus, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
+	public void queryFactDataList(String bizUnit, String bizObjectType, String boStatus, PagingOptions pagingOptions, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
 		String account = this.appActivity.getAppInstContext().getAccount();		
-		pagingOptions.queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, pagingOptions.queryCond);
+		pagingOptions.queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, bizUnit, pagingOptions.queryCond);
 		
 		Future<JsonObject> ret = Future.future();
 		ret.setHandler(next);
@@ -1100,12 +1104,12 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * 指定单一状态查询最新状态数据（不分页）
      */
 	@Override
-	public void queryLatestFactDataList(String bizObjectType, String boStatus, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
+	public void queryLatestFactDataList(String bizUnit, String bizObjectType, String boStatus, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
 		
 		List<String> statusList = new ArrayList<>();
 		statusList.add(boStatus);
 		
-		queryLatestFactDataList(bizObjectType, statusList, fields, queryCondition, mongoCli, next);
+		queryLatestFactDataList(bizUnit, bizObjectType, statusList, fields, queryCondition, mongoCli, next);
 		
 	}
 	
@@ -1113,18 +1117,20 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * 指定多状态查询最新状态数据（不分页）
      */
 	@Override
-	public void queryLatestFactDataList(String bizObjectType, List<String> boStatusList, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
+	public void queryLatestFactDataList(String bizUnit, String bizObjectType, List<String> boStatusList, JsonObject fields, JsonObject queryCondition, MongoClient mongoCli, Handler<AsyncResult<List<JsonObject>>> next){
 
 		Future<List<JsonObject>> ret = Future.future();
 		ret.setHandler(next);
 		
 		JsonObject retQuery = new JsonObject();
 		if(queryCondition != null && queryCondition.size() > 0){
-			retQuery.put("$and", new JsonArray()
-											.add(new JsonObject().put("next_state", ""))
-											.add(queryCondition));
+				retQuery.put("$and", new JsonArray()
+												.add(new JsonObject().put("next_state", ""))
+												.add(queryCondition));
+
 		}else{
-			retQuery.put("next_state", "");
+				retQuery.put("next_state", "");
+
 		}
 
 		
@@ -1134,7 +1140,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
     	List<JsonObject> retList = Collections.synchronizedList(new ArrayList<JsonObject>());
     	
     	boStatusList.forEach(boStatus -> {
-    		queryFactDataList(bizObjectType, boStatus, fields, retQuery, mongoCli, findRet->{
+    		queryFactDataList(bizUnit, bizObjectType, boStatus, fields, retQuery, mongoCli, findRet->{
   			  if (findRet.succeeded()) {
 					List<JsonObject> data = findRet.result();
 					if(data.size() > 0){
@@ -1162,7 +1168,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * 指定单一状态查询最新状态数据（分页）
      */
 	@Override
-	public void queryLatestFactDataList(String bizObjectType, String boStatus, JsonObject pagingInfo, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
+	public void queryLatestFactDataList(String bizUnit, String bizObjectType, String boStatus, JsonObject pagingInfo, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
 
 		List<String> statusList = new ArrayList<>();
 		statusList.add(boStatus);
@@ -1171,7 +1177,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		JsonObject paging = pagingInfo.getJsonObject("paging");
 		JsonObject cond = pagingInfo.getJsonObject("query");
 		
-		queryLatestFactDataList(bizObjectType, statusList, fields, paging, cond, mongoCli, next);
+		queryLatestFactDataList(bizUnit, bizObjectType, statusList, fields, paging, cond, mongoCli, next);
 	}
 	
 	
@@ -1180,25 +1186,25 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * 指定单一状态查询最新状态数据（分页）
      */
 	@Override
-	public void queryLatestFactDataList(String bizObjectType, String boStatus, JsonObject fields, JsonObject paging, JsonObject otherCond, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
+	public void queryLatestFactDataList(String bizUnit, String bizObjectType, String boStatus, JsonObject fields, JsonObject paging, JsonObject otherCond, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
 
 		List<String> statusList = new ArrayList<>();
 		statusList.add(boStatus);
 		
-		queryLatestFactDataList(bizObjectType, statusList, fields, paging, otherCond, mongoCli, next);
+		queryLatestFactDataList(bizUnit, bizObjectType, statusList, fields, paging, otherCond, mongoCli, next);
 	}
 
     /**
      * 指定多状态查询最新状态数据（分页）
      */
 	@Override
-	public void queryLatestFactDataList(String bizObjectType, List<String> boStatusList, JsonObject pagingInfo, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
+	public void queryLatestFactDataList(String bizUnit, String bizObjectType, List<String> boStatusList, JsonObject pagingInfo, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
 		
 		JsonObject fields = pagingInfo.getJsonObject("fields");
 		JsonObject paging = pagingInfo.getJsonObject("paging");
 		JsonObject cond = pagingInfo.getJsonObject("query");		
 		
-		queryLatestFactDataList(bizObjectType, boStatusList, fields, paging, cond, mongoCli, next);
+		queryLatestFactDataList(bizUnit, bizObjectType, boStatusList, fields, paging, cond, mongoCli, next);
 	}
 	
 
@@ -1206,7 +1212,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * 指定多状态查询最新状态数据（分页）
      */
 	@Override
-	public void queryLatestFactDataList(String bizObjectType, List<String> boStatusList, JsonObject fields, JsonObject paging, JsonObject otherCond, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
+	public void queryLatestFactDataList(String bizUnit, String bizObjectType, List<String> boStatusList, JsonObject fields, JsonObject paging, JsonObject otherCond, MongoClient mongoCli, Handler<AsyncResult<JsonObject>> next){
 
 		MongoClient mongoCliTemp = mongoCli;
 		if(mongoCli == null)
@@ -1219,15 +1225,16 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		
 		JsonObject retQuery = new JsonObject();
 		if(otherCond != null && otherCond.size() > 0){
-			retQuery.put("$and", new JsonArray()
-											.add(new JsonObject().put("next_state", ""))
-											.add(otherCond));
+				retQuery.put("$and", new JsonArray()
+						.add(new JsonObject().put("next_state", ""))
+						.add(otherCond));
+
 		}else{
-			retQuery.put("next_state", "");
+				retQuery.put("next_state", "");
 		}
 		
 		String account = this.appActivity.getAppInstContext().getAccount();
-		JsonObject queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, retQuery);
+		JsonObject queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, bizUnit, retQuery);
     	
 		Integer pageSize = paging.getInteger("page_size");
     	long currentCount = paging.getInteger("page_number") * pageSize;
@@ -1252,7 +1259,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 						int totalPageCount = tempTotalPage;
 						
 						if(pageSize > totalNum){
-							queryLatestFactDataList(bizObjectType, boStatusList, fields, otherCond, mongoClient, findRet->{
+							queryLatestFactDataList(bizUnit, bizObjectType, boStatusList, fields, otherCond, mongoClient, findRet->{
 								if (findRet.succeeded()) {															
 									JsonArray retArray = new JsonArray(findRet.result());
 									JsonObject retData = new JsonObject()
@@ -1509,7 +1516,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 	
 		String boStatus = boStatusList.get(index);
 		
-		getFactDataCount(bizObjectType, boStatus, queryCond, mongoCli, countRet->{
+		getFactDataCount(null, bizObjectType, boStatus, queryCond, mongoCli, countRet->{
 			  if (countRet.succeeded()) {
 				  Integer retValue = Integer.valueOf(countRet.result().toString());
 				  boPagingCounts.subTotals.add(retValue);
@@ -1530,12 +1537,12 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 	}	
 	
 	@Override
-	public void existFactData(String bizObjectType, JsonObject query, String status, MongoClient mongoCli, Handler<AsyncResult<Boolean>> next){
+	public void existFactData(String bizUnit, String bizObjectType, JsonObject query, String status, MongoClient mongoCli, Handler<AsyncResult<Boolean>> next){
 		
 		Future<Boolean> ret = Future.future();
 		ret.setHandler(next);
 		
-		this.getFactDataCount(bizObjectType, status, query, mongoCli, res->{
+		this.getFactDataCount(bizUnit, bizObjectType, status, query, mongoCli, res->{
 			if (res.succeeded()) {
 				if(res.result() > 0){
 					ret.complete(true);	
@@ -1556,7 +1563,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		query.put("bo_id", boId);
 		
 		String account = this.appActivity.getAppInstContext().getAccount();
-		query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, query);
+		query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, null, query);
 		
 		Future<Boolean> ret = Future.future();
 		ret.setHandler(next);
@@ -1581,9 +1588,9 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 	}
 	
 	@Override
-	public void getFactDataCount(String bizObjectType, String boStatus, JsonObject queryCond, MongoClient mongoCli, Handler<AsyncResult<Long>> next){
+	public void getFactDataCount(String bizUnit, String bizObjectType, String boStatus, JsonObject queryCond, MongoClient mongoCli, Handler<AsyncResult<Long>> next){
 		String account = this.appActivity.getAppInstContext().getAccount();
-		JsonObject query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, queryCond);
+		JsonObject query = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, bizUnit, queryCond);
 		
 		Future<Long> ret = Future.future();
 		ret.setHandler(next);

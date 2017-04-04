@@ -12,5 +12,5 @@ import io.vertx.core.json.JsonObject;
  */
 public interface DataPersistentPolicy {
 	String getTableName(String account, String tableName);
-	JsonObject getQueryConditionForMongo(String account, JsonObject query);
+	JsonObject getQueryConditionForMongo(String account, String bizUnit, JsonObject query);
 }
