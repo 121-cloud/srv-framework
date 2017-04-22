@@ -20,7 +20,7 @@ import io.vertx.core.json.JsonObject;
 public class AppStatusQueryHandler extends AppServiceEngineHandlerImpl<JsonObject> {
 
 	//{appid}.{appGroup}.platform.appinst_status.get
-	public static String GET_APPINSTSTATUS_BASE = "platform.appinst_status.get";//响应应用状态查询
+	private String GET_APPINSTSTATUS_BASE = "platform.appinst_status.get";//响应应用状态查询
 	
 	/**
 	 * Constructor.

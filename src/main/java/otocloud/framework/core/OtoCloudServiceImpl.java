@@ -8,6 +8,7 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -897,12 +898,34 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		
 	}
 	
-	private void undeployComponents(Future<Void> stopFuture){
+	private void undeployComponents(Future<Void> stopFuture){		
+		Iterator<Deployment> compItor = components.values().iterator();		
+		undeployComponents(compItor, stopFuture);
+	}
+	
+	private void undeployComponents(Iterator<Deployment> compItor, Future<Void> stopFuture){
+		if(!compItor.hasNext()){
+			stopFuture.complete();
+			return;
+		}
+		Deployment comp = compItor.next();
+		vertxInstance.undeploy(comp.deploymentID(), res -> {
+			if(res.succeeded()){				
+				
+			}else{					
+               	Throwable err = res.cause();
+            	logger.error(err.getMessage(), err);
+    		}
+			undeployComponents(compItor, stopFuture);
+		});
+	}
+	
+/*	private void undeployComponents(Future<Void> stopFuture){
 		Integer size = components.size();
 		AtomicInteger stoppedCount = new AtomicInteger(0);
 		
 		components.forEach((key, comp)-> {
-			if(!comp.isChild()){
+			//if(comp.isChild()){
 				vertxInstance.undeploy(comp.deploymentID(), res -> {
 					if(res.succeeded()){				
 						
@@ -922,7 +945,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
                 }
 			}
 		});
-	}
+	}*/
 	
 	public void closeCompletedHandle(Future<Void> stopFuture){
 		components.clear();

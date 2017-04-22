@@ -14,7 +14,7 @@ import io.vertx.core.json.JsonObject;
  */
 public class AppRestApiURIResolver extends AppServiceEngineHandlerImpl<JsonObject> {
 	
-	public static final String ADDRESS = "platform.container.uri_resolver";
+	private final String ADDRESS = "platform.container.uri_resolver";
 
 	/**
 	 * Constructor.

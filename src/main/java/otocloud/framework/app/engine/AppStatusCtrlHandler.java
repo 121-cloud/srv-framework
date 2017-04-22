@@ -21,7 +21,7 @@ import io.vertx.core.json.JsonObject;
 public class AppStatusCtrlHandler extends AppServiceEngineHandlerImpl<JsonObject> {
 
 	//{appid}.{appGroup}.platform.appinst_status.control
-	public static String APPINSTS_STATUS_CONTROL_BASE = "platform.appinst_status.control";//应用实例的启动/停止指令
+	private String APPINSTS_STATUS_CONTROL_BASE = "platform.appinst_status.control";//应用实例的启动/停止指令
 	
 	/**
 	 * Constructor.
