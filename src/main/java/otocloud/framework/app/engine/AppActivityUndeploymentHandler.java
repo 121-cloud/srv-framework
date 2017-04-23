@@ -3,10 +3,10 @@
  */
 package otocloud.framework.app.engine;
 
-import otocloud.framework.core.CompUndeploymentHandler;
 import io.vertx.core.Future;
-import otocloud.framework.core.OtoCloudBusMessage;
 import io.vertx.core.json.JsonObject;
+import otocloud.framework.core.CommandMessage;
+import otocloud.framework.core.CompUndeploymentHandler;
 
 
 /**
@@ -34,7 +34,7 @@ public class AppActivityUndeploymentHandler extends AppServiceEngineHandlerForPu
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void handle(OtoCloudBusMessage<JsonObject> msg) {
+	public void handle(CommandMessage<JsonObject> msg) {
 		
 		JsonObject body = msg.body();
 		String compName = body.getString("comp_name");

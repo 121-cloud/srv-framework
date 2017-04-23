@@ -152,7 +152,8 @@ public class OtoCloudBusMessageImpl<T> implements OtoCloudBusMessage<T> {
 	@Override
 	public T body() {
 		return eventMessage.body();
-	}
+	}	
+
 
 	@Override
 	public String replyAddress() {

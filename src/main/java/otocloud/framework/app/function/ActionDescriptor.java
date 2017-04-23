@@ -22,24 +22,24 @@ public class ActionDescriptor {
 	}
 
 	//使用业务角色
-	private BizRoleDescriptor usedRole;
+	//private BizRoleDescriptor usedRole;
 
 	//业务状态变化
 	private BizStateSwitchDesc bizStateSwitchDesc;
 
 	
-	/**
+/*	*//**
 	 * @return the usedRoles
-	 */
+	 *//*
 	public BizRoleDescriptor getUsedRole() {
 		return usedRole;
 	}
-	/**
+	*//**
 	 * @param usedRoles the usedRoles to set
-	 */
+	 *//*
 	public void setUsedRole(BizRoleDescriptor usedRole) {
 		this.usedRole = usedRole;
-	}
+	}*/
 	
 	
 	/**
@@ -61,9 +61,9 @@ public class ActionDescriptor {
 		
 	}
 	
-	public ActionDescriptor(HandlerDescriptor handlerDescriptor, BizRoleDescriptor role, BizStateSwitchDesc bizStateSwitchDesc) {
+	public ActionDescriptor(HandlerDescriptor handlerDescriptor, BizStateSwitchDesc bizStateSwitchDesc) {
 		setHandlerDescriptor(handlerDescriptor);
-		setUsedRole(role);
+		//setUsedRole(role);
 		setBizStateSwitch(bizStateSwitchDesc);
 
 	}

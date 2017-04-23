@@ -3,8 +3,8 @@
  */
 package otocloud.framework.app.engine;
 
-import otocloud.framework.core.OtoCloudBusMessage;
 import io.vertx.core.json.JsonObject;
+import otocloud.framework.core.CommandMessage;
 
 
 /**
@@ -26,7 +26,7 @@ public class AppRestApiURIResolver extends AppServiceEngineHandlerImpl<JsonObjec
 	}
 
 	@Override
-	public void handle(OtoCloudBusMessage<JsonObject> msg) {
+	public void handle(CommandMessage<JsonObject> msg) {
 		JsonObject body = msg.body();
 		
 		this.appServiceEngine.getLogger().info("API地址转换请求:" + body.toString());

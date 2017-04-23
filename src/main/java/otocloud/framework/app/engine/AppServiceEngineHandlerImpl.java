@@ -2,17 +2,17 @@
  * Copyright (C) 2015 121Cloud Project Group  All rights reserved.
  */
 package otocloud.framework.app.engine;
-import otocloud.framework.core.OtoCloudBusMessageImpl;
-import otocloud.framework.core.OtoCloudEventDescriptor;
-import otocloud.framework.core.HandlerDescriptor;
-import otocloud.framework.core.OtoCloudEventHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
-import otocloud.framework.core.OtoCloudBusMessage;
+import io.vertx.core.json.JsonObject;
+import otocloud.framework.core.CommandMessage;
+import otocloud.framework.core.HandlerDescriptor;
+import otocloud.framework.core.OtoCloudEventDescriptor;
+import otocloud.framework.core.OtoCloudEventHandler;
 //import io.vertx.core.eventbus.MessageConsumer;
 import otocloud.framework.core.session.Session;
 import otocloud.framework.core.session.SessionStore;
@@ -40,7 +40,7 @@ public abstract class AppServiceEngineHandlerImpl<T> implements OtoCloudEventHan
     public void register(EventBus eventBus) {
     	bus = eventBus;
 		//consumer = eventBus.<T>consumer(getRealAddress(), this::internalHandle);
-		eventBus.<T>consumer(getRealAddress(), this::internalHandle);
+		eventBus.<JsonObject>consumer(getRealAddress(), this::internalHandle);
 		
 /*		Integer disNoInteger = appServiceEngine.getDistributedNodeIndex();
 		if(disNoInteger > 0){
@@ -51,7 +51,7 @@ public abstract class AppServiceEngineHandlerImpl<T> implements OtoCloudEventHan
 	}
     
 	@Override
-	public void internalHandle(Message<T> msg) {
+	public void internalHandle(Message<JsonObject> msg) {
 /*		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);
 		if(otoMsg.needAsyncReply()){
 			msg.reply("ok");
@@ -60,7 +60,7 @@ public abstract class AppServiceEngineHandlerImpl<T> implements OtoCloudEventHan
 		
 		System.out.println("服务框架 收到请求消息！");
 		
-		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);	
+		CommandMessage<T> otoMsg = new CommandMessage<T>(msg, bus);	
 		
 		sessionHandle(otoMsg, next->{
 			if(next.succeeded()){
@@ -73,14 +73,14 @@ public abstract class AppServiceEngineHandlerImpl<T> implements OtoCloudEventHan
 		});
 	}
 	
-	private void toHandle(OtoCloudBusMessage<T> otoMsg){
+	private void toHandle(CommandMessage<T> otoMsg){
 		if(otoMsg.needAsyncReply()){
 			otoMsg.reply("ok");
 		}
 		handle(otoMsg);
 	}
 	
-	private void sessionHandle(OtoCloudBusMessage<T> msg, Handler<AsyncResult<Void>> next){
+	private void sessionHandle(CommandMessage<T> msg, Handler<AsyncResult<Void>> next){
 		Future<Void> future = Future.future();
 		future.setHandler(next);
 		

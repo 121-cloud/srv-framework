@@ -3,13 +3,14 @@
  */
 package otocloud.framework.app.engine;
 
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.json.JsonObject;
+
 import java.util.Map;
 
 import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.common.OtoCloudServiceState;
-import otocloud.framework.core.OtoCloudBusMessage;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.json.JsonObject;
+import otocloud.framework.core.CommandMessage;
 
 
 /**
@@ -45,7 +46,7 @@ public class AppStatusQueryHandler extends AppServiceEngineHandlerImpl<JsonObjec
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void handle(OtoCloudBusMessage<JsonObject> msg) {
+	public void handle(CommandMessage<JsonObject> msg) {
 		JsonObject body = msg.body();
 		
 		String account = body.getString("account");

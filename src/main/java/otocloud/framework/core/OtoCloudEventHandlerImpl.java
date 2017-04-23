@@ -50,10 +50,10 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
     }
     
 	@Override
-	public void internalHandle(Message<T> msg){
+	public void internalHandle(Message<JsonObject> msg){
 		System.out.println("服务框架 收到请求消息！");
 		
-		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);	
+		CommandMessage<T> otoMsg = new CommandMessage<T>(msg, bus);	
 		
 		sessionHandle(otoMsg, next->{
 			if(next.succeeded()){
@@ -66,6 +66,9 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 						authFuture.setHandler(authRet->{
 							if(authRet.succeeded()){
 								if(authRet.result()){
+									
+									
+									
 									toHandle(otoMsg);
 								}else{
 									otoMsg.fail(100, "此用户无访问权限.");
@@ -90,7 +93,7 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 		});
 	}
 	
-	private void sessionHandle(OtoCloudBusMessage<T> msg, Handler<AsyncResult<Void>> next){
+	private void sessionHandle(CommandMessage<T> msg, Handler<AsyncResult<Void>> next){
 		Future<Void> future = Future.future();
 		future.setHandler(next);
 		
@@ -124,7 +127,7 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 		}
 	}
 	
-	private void toHandle(OtoCloudBusMessage<T> otoMsg){
+	private void toHandle(CommandMessage<T> otoMsg){
 		if(otoMsg.needAsyncReply()){
 			otoMsg.reply("ok");
 		}
@@ -140,7 +143,7 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 				Long appId = componentImpl.getService().getAppId();		
 				if(appId > 0){
 					String componentName = componentImpl.getName();
-					String querySql = "SELECT d_acct_biz_unit_id,d_is_global_bu,acct_biz_unit_post_id,d_app_activity_id FROM view_user_activity WHERE auth_user_id=? AND acct_id=? AND d_app_id=? AND d_app_activity_code=? limit 1";
+					String querySql = "SELECT d_acct_biz_unit_id,d_org_role_id,d_is_global_bu,acct_biz_unit_post_id,d_app_activity_id FROM view_user_activity WHERE auth_user_id=? AND acct_id=? AND d_app_id=? AND d_app_activity_code=? limit 1";
 					
 					  try{
 						  
@@ -171,6 +174,7 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 														  if(retData.size() > 0){
 															  JsonObject retItem = retData.get(0);
 															  session.put("biz_unit_id", retItem.getLong("d_acct_biz_unit_id"));
+															  session.put("org_role_id", retItem.getLong("d_org_role_id"));															  
 															  session.put("is_global_bu", retItem.getInteger("d_is_global_bu")==1?true:false);
 															  session.put("biz_unit_post_id", retItem.getLong("acct_biz_unit_post_id"));
 															  session.put("app_activity_id", retItem.getLong("d_app_activity_id"));															  

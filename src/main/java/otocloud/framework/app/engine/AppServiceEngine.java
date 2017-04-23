@@ -6,6 +6,7 @@ package otocloud.framework.app.engine;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 
+import java.util.List;
 import java.util.Map;
 
 import otocloud.framework.app.persistence.OtoCloudAppDataSource;
@@ -20,6 +21,11 @@ import otocloud.framework.core.OtoCloudServiceForVerticle;
  * @author lijing@yonyou.com
  */
 public interface AppServiceEngine extends OtoCloudServiceForVerticle, WebServerHost {
+	
+	//应用的组织角色
+	List<OrgRoleDescriptor> getOrgRoles();
+	
+	boolean checkAppOrgRole(String bizUnitOrgRole);
 
 	int getDistributedNodeIndex();
 	boolean checkInstanceScope(String acctId);	

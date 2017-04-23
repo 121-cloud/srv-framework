@@ -14,11 +14,9 @@ import otocloud.framework.core.OtoCloudEventDescriptor;
  * @author lijing@yonyou.com
  */
 public class ActivityDescriptor {
-	//活动前缀
+	//活动
 	private String activityName;
-	/**
-	 * @return the activityPrefix
-	 */
+
 	public String getActivityName() {
 		return activityName;
 	}
@@ -44,7 +42,7 @@ public class ActivityDescriptor {
 	}
 
 	//业务角色
-	private List<BizRoleDescriptor> bizRolesDesc;
+	//private List<OrgRoleDescriptor> orgRolesDesc;
 	//业务操作
 	private List<ActionDescriptor> actionsDesc;
 	//业务事件
@@ -61,18 +59,18 @@ public class ActivityDescriptor {
 	public void setBizEventsDesc(List<OtoCloudEventDescriptor> bizEventsDesc) {
 		this.bizEventsDesc = bizEventsDesc;
 	}
-	/**
+/*	*//**
 	 * @return the bizRolesDesc
-	 */
-	public List<BizRoleDescriptor> getBizRolesDesc() {
-		return bizRolesDesc;
+	 *//*
+	public List<OrgRoleDescriptor> getOrgRolesDesc() {
+		return orgRolesDesc;
 	}
-	/**
+	*//**
 	 * @param bizRolesDesc the bizRolesDesc to set
-	 */
-	public void setBizRolesDesc(List<BizRoleDescriptor> bizRolesDesc) {
-		this.bizRolesDesc = bizRolesDesc;
-	}
+	 *//*
+	public void setBizRolesDesc(List<OrgRoleDescriptor> bizRolesDesc) {
+		this.orgRolesDesc = bizRolesDesc;
+	}*/
 	/**
 	 * @return the actionsDesc
 	 */
@@ -88,8 +86,8 @@ public class ActivityDescriptor {
 
 	//构造
 	public ActivityDescriptor(String bizObjectType, String activityName, 
-			List<BizRoleDescriptor> bizRolesDesc, List<ActionDescriptor> actionsDesc, List<OtoCloudEventDescriptor> bizEventDesc){
-		setBizRolesDesc(bizRolesDesc);
+			List<ActionDescriptor> actionsDesc, List<OtoCloudEventDescriptor> bizEventDesc){
+		//setBizRolesDesc(orgRolesDesc);
 		setActionsDesc(actionsDesc);
 		setActionsDesc(actionsDesc);
 		setActivityName(activityName);

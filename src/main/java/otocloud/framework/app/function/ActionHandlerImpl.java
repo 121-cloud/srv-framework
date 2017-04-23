@@ -78,7 +78,7 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
     	if(actionDesc != null)
     		return actionDesc;
 		HandlerDescriptor handlerDescriptor = getHanlderDesc();
-		actionDesc = new ActionDescriptor(handlerDescriptor, null, null);
+		actionDesc = new ActionDescriptor(handlerDescriptor, null);
 		return actionDesc;
 	}	
 

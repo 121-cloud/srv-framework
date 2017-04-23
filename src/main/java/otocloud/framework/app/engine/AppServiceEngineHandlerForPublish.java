@@ -2,14 +2,14 @@
  * Copyright (C) 2015 121Cloud Project Group  All rights reserved.
  */
 package otocloud.framework.app.engine;
-import otocloud.framework.core.OtoCloudBusMessage;
-import otocloud.framework.core.OtoCloudBusMessageImpl;
-import otocloud.framework.core.OtoCloudEventDescriptor;
-import otocloud.framework.core.HandlerDescriptor;
-import otocloud.framework.core.OtoCloudEventHandler;
 import io.vertx.core.Future;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonObject;
+import otocloud.framework.core.CommandMessage;
+import otocloud.framework.core.HandlerDescriptor;
+import otocloud.framework.core.OtoCloudEventDescriptor;
+import otocloud.framework.core.OtoCloudEventHandler;
 
 
 
@@ -30,13 +30,13 @@ public abstract class AppServiceEngineHandlerForPublish<T> implements OtoCloudEv
     @Override
     public void register(EventBus eventBus) {   
     	bus = eventBus;
-    	eventBus.<T>consumer(getRealAddress(), this::internalHandle);
+    	eventBus.<JsonObject>consumer(getRealAddress(), this::internalHandle);
 		//consumer = eventBus.<T>consumer(getRealAddress(), this::internalHandle);
 	}
     
 	@Override
-	public void internalHandle(Message<T> msg) {
-		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);
+	public void internalHandle(Message<JsonObject> msg) {
+		CommandMessage<T> otoMsg = new CommandMessage<T>(msg, bus);
 		if(otoMsg.needAsyncReply()){
 			msg.reply("ok");
 		}

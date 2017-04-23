@@ -8,8 +8,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
-import otocloud.framework.app.function.ActionHandlerImpl;
-import otocloud.framework.core.OtoCloudBusMessage;
+import otocloud.framework.core.CommandMessage;
 
 
 /**
@@ -41,7 +40,7 @@ public class AppInitCmdHandlerImpl extends ActionHandlerImpl<JsonObject> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void handle(OtoCloudBusMessage<JsonObject> msg) {
+	public void handle(CommandMessage<JsonObject> msg) {
 	   	JsonObject body = msg.body();
 
 		//通知网关的适配器进行供应商初始化处理

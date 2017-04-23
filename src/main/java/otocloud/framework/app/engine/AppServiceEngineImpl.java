@@ -63,6 +63,7 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 
 	protected Map<String, AppService> appInstances;
 	//protected Map<String, String> accountAppInsts; 
+	protected List<OrgRoleDescriptor> orgRoles;
 	
 	protected boolean isWebServerHost;
 	protected AppWebServerImpl webServer;
@@ -150,6 +151,11 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 		}
 
 
+	}
+	
+	@Override
+	public List<OrgRoleDescriptor> getOrgRoles(){
+		return orgRoles;
 	}
 	
 	@Override
@@ -266,27 +272,111 @@ public abstract class AppServiceEngineImpl extends OtoCloudServiceForVerticleImp
 		return ret;
 	}
 	
+	@Override
+	public boolean checkAppOrgRole(String bizUnitOrgRole){
+		if(this.orgRoles == null || this.orgRoles.size() <= 0){
+			return false;
+		}
+		for (OrgRoleDescriptor orgRole : orgRoles) {
+			if(orgRole.getOrgRoleId().equals(bizUnitOrgRole)){
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	
 	@Override
 	public void afterRun(Future<Void> runFuture){
 			
 		AppInstRunFuture innerRunFuture = new AppInstRunFuture();			
 		innerRunFuture.RunFuture = Future.future();
-		// 创建应用实例
-		createAppInstances(innerRunFuture);	
-		innerRunFuture.RunFuture.setHandler(ret -> {
-    		if(ret.succeeded()){   
-    			//运行web服务器
-    			runWebServer();
-    			
-    			futureStatusComplete();
-    			runFuture.complete();
-    		}else{		
-    			futureStatusRollback();
-    			runFuture.fail(ret.cause());
-    		}  		
+		
+/*		//初始化应用角色
+		getAppOrgRoles(appOrgRolesRet->{*/
+		
+			// 创建应用实例
+			createAppInstances(innerRunFuture);	
+			innerRunFuture.RunFuture.setHandler(ret -> {
+	    		if(ret.succeeded()){   
+	    			//运行web服务器
+	    			runWebServer();
+	    			
+	    			futureStatusComplete();
+	    			runFuture.complete();
+	    		}else{		
+	    			futureStatusRollback();
+	    			runFuture.fail(ret.cause());
+	    		}  		
+				
+			});
 			
-		});
+/*		});*/
+
+	}
+	
+	private void getAppOrgRoles(Handler<AsyncResult<Void>> done){
+		
+		  Future<Void> retFuture = Future.future();
+		  retFuture.setHandler(done);
+	  
+		  String querySql = "SELECT org_role_id,role_code FROM view_app_org_role WHERE app_id=?";
+		  
+		  try{
+		  
+			  JDBCClient sqlClient = this.getSysDatasource().getSqlClient();
+			  
+			  sqlClient.getConnection(connRes -> {
+					if (connRes.succeeded()) {
+						final SQLConnection conn = connRes.result();				
+						conn.setAutoCommit(true, res ->{
+						  if (res.failed()) {
+							  closeDBConnect(conn);
+			  	    		  Throwable err = res.cause();
+			  	    		  String replyMsg = err.getMessage();
+			  	    		  getLogger().error(replyMsg, err);
+			  	    		  retFuture.fail(err);
+						  }else{										
+							conn.queryWithParams(querySql, new JsonArray()									
+									.add(srvCfg.getLong(AppConfiguration.APP_ID_KEY, 0L)),
+							  appSubRet->{								  
+								  if (appSubRet.succeeded()) {
+									  ResultSet result = appSubRet.result();
+									  List<JsonObject> retOrgRoles = result.getRows();
+									  if(retOrgRoles != null && retOrgRoles.size() > 0){
+										  this.orgRoles = new ArrayList<>();
+										  for(JsonObject retOrgRole: retOrgRoles){
+											  OrgRoleDescriptor orgRoleDescriptor = new OrgRoleDescriptor(
+													  retOrgRole.getLong("org_role_id").toString(), retOrgRole.getString("role_code"));
+											  
+											  this.orgRoles.add(orgRoleDescriptor);
+										  }
+									  }
+									  retFuture.complete();
+								  }else{
+					  	    		  Throwable err = appSubRet.cause();
+					  	    		  String replyMsg = err.getMessage();
+					  	    		  getLogger().error(replyMsg, err);
+					  	    		  retFuture.fail(err);
+								  }
+								  closeDBConnect(conn);
+							  });
+						}
+					});
+	
+				}else{
+		    		  Throwable err = connRes.cause();
+		    		  String replyMsg = err.getMessage();
+		    		  getLogger().error(replyMsg, err);
+		    		  retFuture.fail(err);
+					}
+				});
+			  
+		  }catch(Exception ex){
+	  		  String replyMsg = ex.getMessage();
+	  		  getLogger().error(replyMsg, ex);
+	  		  retFuture.fail(ex);
+		  }		  
 
 	}
 	

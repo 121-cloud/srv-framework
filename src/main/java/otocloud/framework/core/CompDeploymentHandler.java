@@ -28,7 +28,7 @@ public class CompDeploymentHandler extends OtoCloudEventHandlerBase<JsonObject> 
 	}
 
 	@Override
-	public void handle(OtoCloudBusMessage<JsonObject> msg) {
+	public void handle(CommandMessage<JsonObject> msg) {
 		JsonObject body = msg.body();
 		String serviceName = body.getString("service_name");
 		JsonObject compDeploymentDesc = body.getJsonObject("component_deployment");

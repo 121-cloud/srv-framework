@@ -6,6 +6,7 @@ package otocloud.framework.core;
 import io.vertx.core.Future;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonObject;
 
 
 /**
@@ -30,7 +31,7 @@ public abstract class OtoCloudEventHandlerBase<T> implements OtoCloudEventHandle
  		//consumer = eventBus.<T>consumer(getRealAddress(), this::internalHandle);
     	String realAddr = getRealAddress();    	
     	System.out.println("服务框架handler地址注册：" + realAddr);
- 		eventBus.<T>consumer(realAddr, this::internalHandle);
+ 		eventBus.<JsonObject>consumer(realAddr, this::internalHandle);
 	}
     
     @Override
@@ -73,10 +74,10 @@ public abstract class OtoCloudEventHandlerBase<T> implements OtoCloudEventHandle
 	}
 	
 	@Override
-	public void internalHandle(Message<T> msg){
+	public void internalHandle(Message<JsonObject> msg){
 		System.out.println("服务框架 收到请求消息！");
 		
-		OtoCloudBusMessage<T> otoMsg = new OtoCloudBusMessageImpl<T>(msg, bus);	
+		CommandMessage<T> otoMsg = new CommandMessage<T>(msg, bus);	
 		
 		if(otoMsg.needAsyncReply()){
 			otoMsg.reply("ok");

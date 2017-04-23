@@ -176,7 +176,7 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
 				});
 			}
 			
-			List<BizRoleDescriptor> bizRolesDesc = exposeBizRolesDesc();
+			//List<BizRoleDescriptor> bizRolesDesc = exposeBizRolesDesc();
 			List<OtoCloudEventDescriptor> bizEventsDesc = exposeOutboundBizEventsDesc();
 
 			if(stateSwitchBizEvents.size() > 0){
@@ -188,8 +188,8 @@ public abstract class AppActivityImpl extends OtoCloudComponentImpl implements A
 				}
 			}
 			
-			activityDescriptor = new ActivityDescriptor(getBizObjectType(),getName(),
-					bizRolesDesc, actionsDescLst, bizEventsDesc);	
+			activityDescriptor = new ActivityDescriptor(getBizObjectType(), getName(),
+					actionsDescLst, bizEventsDesc);	
 		}		
 		return activityDescriptor;
 	}

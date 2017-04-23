@@ -11,8 +11,8 @@ import otocloud.framework.app.common.AppInstanceContext;
 import otocloud.framework.app.engine.AppService;
 import otocloud.framework.app.persistence.OtoCloudAppDataSource;
 import otocloud.framework.app.persistence.OtoCloudCDODataSource;
-import otocloud.framework.core.OtoCloudEventDescriptor;
 import otocloud.framework.core.OtoCloudComponent;
+import otocloud.framework.core.OtoCloudEventDescriptor;
 
 
 /**
@@ -36,7 +36,7 @@ public interface AppActivity extends OtoCloudComponent, BizThreadRecorder {
 	ActivityDescriptor getActivityDescriptor();
 	
 	//应用派生类实现，获取活动的业务角色
-	List<BizRoleDescriptor> exposeBizRolesDesc();	
+	//List<OrgRoleDescriptor> exposeBizRolesDesc();	
 	
 	//公布活动对外发布的事件
 	List<OtoCloudEventDescriptor> exposeOutboundBizEventsDesc();
@@ -44,8 +44,6 @@ public interface AppActivity extends OtoCloudComponent, BizThreadRecorder {
 	//action
 	List<ActionHandlerRegistry> getActionHandlers();	
 	
-	//获取当前账户在当前活动中的业务角色
-	//List<BizRole> getActivityRolesForCurrentAccount();
-	
+
 	void setCompleted(String bizObjId, JsonObject actor);
 }

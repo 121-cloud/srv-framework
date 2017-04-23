@@ -54,14 +54,14 @@ public class BizObjectQueryProxy extends AppActivityImpl {
 		return "";
 	}
 
-	/**
+/*	*//**
 	 * {@inheritDoc}
-	 */
+	 *//*
 	@Override
 	public List<BizRoleDescriptor> exposeBizRolesDesc() {
 		// TODO Auto-generated method stub
 		return null;
-	}
+	}*/
 
 	/**
 	 * {@inheritDoc}

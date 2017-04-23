@@ -5,6 +5,7 @@ package otocloud.framework.core;
 
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonObject;
 
 
 /**
@@ -12,7 +13,7 @@ import io.vertx.core.eventbus.Message;
  * @date 2015年6月12日
  * @author lijing@yonyou.com
  */
-public interface OtoCloudEventHandler<T> extends OtoCloudEventHandlerRegistry, Handler<OtoCloudBusMessage<T>> {	
+public interface OtoCloudEventHandler<T> extends OtoCloudEventHandlerRegistry, Handler<CommandMessage<T>> {	
 	
-    void internalHandle(Message<T> msg);
+    void internalHandle(Message<JsonObject> msg);
 }

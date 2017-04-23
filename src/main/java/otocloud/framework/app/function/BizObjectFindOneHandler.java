@@ -4,8 +4,7 @@
 package otocloud.framework.app.function;
 
 import io.vertx.core.json.JsonObject;
-import otocloud.framework.app.function.ActionHandlerImpl;
-import otocloud.framework.core.OtoCloudBusMessage;
+import otocloud.framework.core.CommandMessage;
 
 
 
@@ -34,7 +33,7 @@ public class BizObjectFindOneHandler extends ActionHandlerImpl<JsonObject> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void handle(OtoCloudBusMessage<JsonObject> msg) {    	
+	public void handle(CommandMessage<JsonObject> msg) {    	
 
     	JsonObject msgBody = msg.body();
     	String boType = msgBody.getString("bo_type");
