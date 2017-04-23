@@ -178,7 +178,8 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 							}else{
 								restAPIRegistryTable.remove(apiName);
 								Throwable err = ret.cause();
-								err.printStackTrace();								
+								this.getLogger().warn(err.getMessage());
+								//err.printStackTrace();								
 							}
 							if (regCount.incrementAndGet() >= size) {					
 								regFuture.complete();		
@@ -1303,7 +1304,8 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		
 		String zkCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + "zookeeper.json";	
 		
-		Vertx.vertx().fileSystem().readFile(zkCfgFilePath, zkResult -> {
+		Vertx fileVertx = Vertx.vertx();
+		fileVertx.fileSystem().readFile(zkCfgFilePath, zkResult -> {
     	    if (zkResult.succeeded()) {
     	    	
     	    	String zfFileContent = zkResult.result().toString(); 
@@ -1311,7 +1313,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
     	        JsonObject zkCfg = new JsonObject(zfFileContent);
 		
 				String cfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + srvCfgFile;
-				Vertx.vertx().fileSystem().readFile(cfgFilePath, result -> {
+				fileVertx.fileSystem().readFile(cfgFilePath, result -> {
 		    	    if (result.succeeded()) {
 		    	    	String fileContent = result.result().toString(); 
 		    	        System.out.println(fileContent);
@@ -1371,7 +1373,8 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		
 		String zkCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + "zookeeper.json";	
 		
-		Vertx.vertx().fileSystem().readFile(zkCfgFilePath, zkResult -> {
+		Vertx fileVertx = Vertx.vertx();
+		fileVertx.fileSystem().readFile(zkCfgFilePath, zkResult -> {
     	    if (zkResult.succeeded()) {
     	    	
     	    	String zfFileContent = zkResult.result().toString(); 
@@ -1379,7 +1382,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
     	        JsonObject zkCfg = new JsonObject(zfFileContent);
 		
 				String cfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + srvCfgFile;
-				Vertx.vertx().fileSystem().readFile(cfgFilePath, result -> {
+				fileVertx.fileSystem().readFile(cfgFilePath, result -> {
 		    	    if (result.succeeded()) {
 		    	    	String fileContent = result.result().toString(); 
 		    	        System.out.println(fileContent);
@@ -1424,7 +1427,8 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		
 		String zkCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + "zookeeper.json";	
 		
-		Vertx.vertx().fileSystem().readFile(zkCfgFilePath, zkResult -> {
+		Vertx fileVertx = Vertx.vertx();
+		fileVertx.fileSystem().readFile(zkCfgFilePath, zkResult -> {
     	    if (zkResult.succeeded()) {
     	    	
     	    	String zfFileContent = zkResult.result().toString(); 
@@ -1432,7 +1436,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
     	        JsonObject zkCfg = new JsonObject(zfFileContent);
 		
 				String cfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + srvCfgFile;
-				Vertx.vertx().fileSystem().readFile(cfgFilePath, result -> {
+				fileVertx.fileSystem().readFile(cfgFilePath, result -> {
 		    	    if (result.succeeded()) {
 		    	    	String fileContent = result.result().toString(); 
 		    	        System.out.println(fileContent);
