@@ -3,16 +3,15 @@
  */
 package otocloud.framework.core;
 
-import java.util.List;
-
-import com.hazelcast.config.Config;
-
-import otocloud.framework.app.engine.AppServiceEngine;
-import otocloud.framework.common.OtoCloudServiceLifeCycle;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.Deployment;
 import io.vertx.core.json.JsonObject;
+
+import java.util.List;
+
+import otocloud.framework.app.engine.AppServiceEngine;
+import otocloud.framework.common.OtoCloudServiceLifeCycle;
 
 
 
@@ -31,7 +30,7 @@ public interface OtoCloudServiceContainer extends OtoCloudServiceLifeCycle {
 	
 	String getContainerName();
 	
-	Config getClusterConfig();
+	JsonObject getClusterConfig();
 	
 	JsonObject getVertxOptins();
 	

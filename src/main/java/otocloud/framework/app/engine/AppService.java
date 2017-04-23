@@ -3,9 +3,11 @@
  */
 package otocloud.framework.app.engine;
 
-import java.util.List;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 
-import com.hazelcast.config.Config;
+import java.util.List;
 
 import otocloud.framework.app.common.AppInstanceContext;
 import otocloud.framework.app.function.ActivityDescriptor;
@@ -14,9 +16,6 @@ import otocloud.framework.app.function.AppInitActivityImpl;
 import otocloud.framework.app.persistence.OtoCloudAppDataSource;
 import otocloud.framework.app.persistence.OtoCloudCDODataSource;
 import otocloud.framework.core.OtoCloudService;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 
 
 /**
@@ -27,7 +26,7 @@ import io.vertx.core.json.JsonObject;
 public interface AppService extends OtoCloudService, WebServerHost {
 	//初始化应用实例：只能执行一次
 	//void init(AppInstanceContext appInstCtx, JsonObject instCfg, Config clusterCfg, Future<Void> initFuture);	
-	void init(AppInstanceContext appInstCtx, JsonObject instCfg, Vertx activityContainer, Config clusterCfg, JsonObject vertxOptionsCfg, Future<Void> initFuture);
+	void init(AppInstanceContext appInstCtx, JsonObject instCfg, Vertx activityContainer, JsonObject clusterCfg, JsonObject vertxOptionsCfg, Future<Void> initFuture);
 	
 	AppServiceEngine getAppEngine();
 	

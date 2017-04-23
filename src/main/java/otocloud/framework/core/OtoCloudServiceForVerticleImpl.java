@@ -9,8 +9,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.List;
 
-import com.hazelcast.config.Config;
-
 /**
  * TODO: DOCUMENT ME!
  * @date 2015年6月24日
@@ -73,7 +71,7 @@ public abstract class OtoCloudServiceForVerticleImpl extends OtoCloudServiceImpl
 		    
 	        Future<Void> initFuture = Future.future();
 	        
-	        Config clusterCfg = null;
+	        JsonObject clusterCfg = null;
 	        JsonObject vertxOptions = null;
 	        if(container != null){
 	        	clusterCfg = container.getClusterConfig();

@@ -3,13 +3,18 @@
  */
 package otocloud.framework.app.engine;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+
 import java.util.ArrayList;
 import java.util.List;
-
-
 import java.util.Set;
 
-import com.hazelcast.config.Config;
 import otocloud.common.OtoConfiguration;
 import otocloud.framework.app.common.AppConfiguration;
 import otocloud.framework.app.common.AppInstanceContext;
@@ -28,13 +33,6 @@ import otocloud.framework.core.HandlerDescriptor;
 import otocloud.framework.core.OtoCloudComponent;
 import otocloud.framework.core.OtoCloudEventHandlerRegistry;
 import otocloud.framework.core.OtoCloudServiceImpl;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 
 
 /**
@@ -77,7 +75,7 @@ public abstract class AppServiceImpl extends OtoCloudServiceImpl implements AppS
 
 	
 	@Override
-	public void init(AppInstanceContext appInstCtx, JsonObject instCfg, Vertx activityContainer, Config clusterCfg, JsonObject vertxOptionsCfg, Future<Void> initFuture){		
+	public void init(AppInstanceContext appInstCtx, JsonObject instCfg, Vertx activityContainer, JsonObject clusterCfg, JsonObject vertxOptionsCfg, Future<Void> initFuture){		
 		this.appContext = appInstCtx;		
 		super.init(instCfg, activityContainer, clusterCfg, vertxOptionsCfg, initFuture);
 	}

@@ -13,7 +13,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.hazelcast.config.Config;
 import otocloud.common.CommandCodec;
 import otocloud.common.CommandResultCodec;
 
@@ -35,7 +34,7 @@ public class VertxInstancePool {
 		return appVertxPool;
 	}
 	
-	public void init(JsonObject srvCfg, Config clusterCfg, int appVertxPoolSize, JsonObject vertxOptions, Future<Void> initFuture){
+	public void init(JsonObject srvCfg, JsonObject clusterCfg, int appVertxPoolSize, JsonObject vertxOptions, Future<Void> initFuture){
 		List<Vertx> vertxSet = new ArrayList<Vertx>();
 		appVertxPool = Collections.synchronizedList(vertxSet);
 
@@ -116,7 +115,7 @@ public class VertxInstancePool {
 		OtoCloudServiceImpl.unRegisterComponentFactory(vertx);	
 	}
 	
-	public void createVertx(JsonObject srvCfg, Config clusterCfg, int size, JsonObject vertxOptions, Future<Void> retFuture) {
+	public void createVertx(JsonObject srvCfg, JsonObject clusterCfg, int size, JsonObject vertxOptions, Future<Void> retFuture) {
 		if(size > 0){
 			AtomicInteger runningCount = new AtomicInteger(0);
 			for (int i = 0; i < size; i++){

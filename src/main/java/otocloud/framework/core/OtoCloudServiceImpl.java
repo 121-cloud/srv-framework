@@ -1,39 +1,6 @@
 package otocloud.framework.core;
 
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.net.InetAddress;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import otocloud.common.OtoCloudDirectoryHelper;
-import otocloud.common.OtoCloudLogger;
-import otocloud.common.OtoConfiguration;
-import otocloud.common.util.JsonUtil;
-import otocloud.framework.core.WebServer;
-import otocloud.framework.core.WebServerImpl;
-import otocloud.framework.common.OtoCloudServiceLifeCycleImpl;
-import otocloud.framework.common.OtoCloudServiceState;
-import otocloud.framework.core.factory.OtoCloudComponentFactory;
-import otocloud.framework.core.factory.OtoCloudHttpComponentFactory;
-import otocloud.framework.core.factory.OtoCloudHttpSecureComponentFactory;
-import otocloud.framework.core.factory.OtoCloudMavenComponentFactory;
-import otocloud.framework.core.factory.OtoCloudServiceFactory;
-import otocloud.framework.core.session.RedisSessionStore;
-import otocloud.framework.core.session.SessionStore;
-import otocloud.persistence.dao.JdbcDataSource;
-
-import com.hazelcast.config.Config;
-import com.hazelcast.config.FileSystemXmlConfig;
-
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -51,6 +18,34 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
+import io.vertx.spi.cluster.zookeeper.ZookeeperClusterManager;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import otocloud.common.OtoCloudDirectoryHelper;
+import otocloud.common.OtoCloudLogger;
+import otocloud.common.OtoConfiguration;
+import otocloud.common.util.JsonUtil;
+import otocloud.framework.common.OtoCloudServiceLifeCycleImpl;
+import otocloud.framework.common.OtoCloudServiceState;
+import otocloud.framework.core.factory.OtoCloudComponentFactory;
+import otocloud.framework.core.factory.OtoCloudHttpComponentFactory;
+import otocloud.framework.core.factory.OtoCloudHttpSecureComponentFactory;
+import otocloud.framework.core.factory.OtoCloudMavenComponentFactory;
+import otocloud.framework.core.factory.OtoCloudServiceFactory;
+import otocloud.framework.core.session.RedisSessionStore;
+import otocloud.framework.core.session.SessionStore;
+import otocloud.persistence.dao.JdbcDataSource;
 
 
 
@@ -78,7 +73,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	protected Map<String, String> restAPIRegistryTable;
 	protected OtoCloudEventHandlerRegistry apiURIResolver;
 	protected JsonObject vertxOptionsCfg;
-	protected Config clusterCfg;
+	protected JsonObject clusterCfg;
 	
 	protected boolean _isWebServerHost;
 	protected WebServerImpl _webServer;
@@ -144,6 +139,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	
 	@Override
 	public void registerRestAPIs(String compName, List<HandlerDescriptor> handlerDescs, Future<Void> regFuture){
+		
 		if(apiRegServerName.isEmpty()){
 			regFuture.complete();		
 			return;
@@ -204,8 +200,8 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	@Override
 	public void unregisterRestAPIs(Future<Void> unregFuture){		
 		
-		if(restAPIRegistryTable.size() > 0){
-			JsonArray uriMappingInfos = new JsonArray();
+		if(restAPIRegistryTable.size() > 0){			
+/*			JsonArray uriMappingInfos = new JsonArray();
 			restAPIRegistryTable.forEach((key, value)->{
 				JsonObject srvRegInfo = new JsonObject().put("registerId", value);
 				uriMappingInfos.add(srvRegInfo);
@@ -221,9 +217,10 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 							unregFuture.fail(err);
 						}
 						
-			});	
+			});	*/
 			
 			restAPIRegistryTable.clear();
+			unregFuture.complete();
 			
 		}else{
 			unregFuture.complete();
@@ -235,7 +232,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	
 	//使用外部容器vertx
 	@Override
-	public void init(JsonObject srvCfg, Vertx compContainer, Config clusterCfg, JsonObject vertxOptionsCfg, Future<Void> initFuture){		
+	public void init(JsonObject srvCfg, Vertx compContainer, JsonObject clusterCfg, JsonObject vertxOptionsCfg, Future<Void> initFuture){		
 		statusReset();
 		setFutureStatus(OtoCloudServiceState.INITIALIZED);	
 				
@@ -262,7 +259,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 
 	//创建独立vertx	
 	@Override
-	public void init(JsonObject srvCfg, Config clusterCfg, JsonObject vertxOptionsCfg, Future<Void> initFuture){		
+	public void init(JsonObject srvCfg, JsonObject clusterCfg, JsonObject vertxOptionsCfg, Future<Void> initFuture){		
 		isolationVertx = true;		
 		VertxOptions options = OtoCloudServiceImpl.createVertxOptions(srvCfg, clusterCfg, vertxOptionsCfg);		
 		// 创建群集Vertx运行时环境
@@ -949,10 +946,11 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 	
 	public void closeCompletedHandle(Future<Void> stopFuture){
 		components.clear();
-		Future<Void> unregHandlersFuture = Future.future();
-		unregisterHandlers(unregHandlersFuture);				
-		unregHandlersFuture.setHandler(unregRet -> {
-    		if(unregRet.succeeded()){   
+		//Future<Void> unregHandlersFuture = Future.future();
+		//unregisterHandlers(unregHandlersFuture);				
+		/*unregHandlersFuture.setHandler(unregRet -> {
+    		if(unregRet.succeeded()){   */
+		
     			if(handlers != null && !handlers.isEmpty())
     				handlers.clear();    			
     			Future<Void> afterStopFuture = Future.future();
@@ -967,7 +965,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
             		}
                	});	
         		
-    		}else{
+/*    		}else{
 				if(sysDataSource != null)
 					sysDataSource.close();
     			Throwable err = unregRet.cause();
@@ -975,7 +973,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 				futureStatusRollback();
 				stopFuture.fail(err);
     		}
-       	});	
+       	});*/	
 
 	}
 	
@@ -1150,7 +1148,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		}	
 	}
 	
-	private void unregisterHandlers(Future<Void> unregFuture) {
+/*	private void unregisterHandlers(Future<Void> unregFuture) {
 		if(handlers != null && handlers.size() > 0){
 			Integer size = handlers.size();
 			AtomicInteger stoppedCount = new AtomicInteger(0);			
@@ -1177,7 +1175,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 			unregFuture.complete();
 		}
 
-	}
+	}*/
 	
 	@Override
 	public List<OtoCloudEventHandlerRegistry> createHandlers(){ 
@@ -1229,7 +1227,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		}
 	}
 	
-	private static String getLocalHostAddress(){
+/*	private static String getLocalHostAddress(){
 		try{
 			InetAddress addr = InetAddress.getLocalHost();	
 			String ip = addr.getHostAddress();//获得本机IP
@@ -1238,10 +1236,10 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 			e.printStackTrace();
 			return "localhost";
 		}
-	}
+	}*/
 	
 	
-	public static VertxOptions createVertxOptions(JsonObject srvCfg, Config clusterCfg, JsonObject vertxOptions){
+	public static VertxOptions createVertxOptions(JsonObject srvCfg, JsonObject clusterCfg, JsonObject vertxOptions){
 		VertxOptions options = null;
 		if(vertxOptions != null){
 			options = new VertxOptions(vertxOptions);
@@ -1251,13 +1249,13 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		options.setClustered(true);
 		ClusterManager mgr = options.getClusterManager();
 		if (mgr == null) {
-			if(clusterCfg == null){
+			if(clusterCfg == null){				
 				mgr = new HazelcastClusterManager();
 				options.setClusterManager(mgr);	
 				System.out.println("使用本地分布式集群！");
-			}else{			
-	   	        String clusterHost = "localhost";
-		        int clusterPort = -1;
+			}else{		
+	   	        String clusterHost = clusterCfg.getString("zookeeperHosts");
+/*		        int clusterPort = -1;
 		        if(srvCfg.containsKey(OtoConfiguration.CLUSTER_CFG)){		
 		        	JsonObject clusterCfgObj = srvCfg.getJsonObject(OtoConfiguration.CLUSTER_CFG);
 			        if(clusterCfgObj.containsKey(OtoConfiguration.CLUSTER_HOST)){
@@ -1268,21 +1266,21 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 			        if(clusterCfgObj.containsKey(OtoConfiguration.CLUSTER_PORT)){
 			        	clusterPort = clusterCfgObj.getInteger(OtoConfiguration.CLUSTER_PORT);
 			        }
-		        }
+		        }*/
 		        
 		        System.out.println("加入分布式集群的本机IP为:" + clusterHost);
 		        
-				//分布式部署必须设置主机名/IP
+/*				//分布式部署必须设置主机名/IP
 				options.setClusterHost(clusterHost);
 				if(clusterPort > 0){
 					options.setClusterPort(clusterPort);
-				}
+				}*/
 	
 				try{
 	/*				String clusterCfgFilePath = System.getProperty("user.dir") + "/conf/" + clusterCfgFile; //hazelcast.xml";
 					Config clusterCfg = new FileSystemXmlConfig(clusterCfgFilePath);
 	*/				
-					mgr = new HazelcastClusterManager(clusterCfg);
+					mgr = new ZookeeperClusterManager(clusterCfg);
 					options.setClusterManager(mgr);	
 				}catch(Exception e){
 					//logger.error(e.getMessage(), e.getCause());		
@@ -1301,49 +1299,61 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
     	Thread thread = new Thread(new ServiceShutDownListener(srvRunner));  
     	runtime.addShutdownHook(thread);  
 		
-		Config clusterCfg = config(logFile);
+		config(logFile);
 		
-		String cfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + srvCfgFile;			
-			
-		Vertx.vertx().fileSystem().readFile(cfgFilePath, result -> {
-    	    if (result.succeeded()) {
-    	    	String fileContent = result.result().toString(); 
-    	        System.out.println(fileContent);
-    	        JsonObject srvCfg = new JsonObject(fileContent);
-    	        
-    	        JsonObject innerConfig = srvCfg.getJsonObject("options").getJsonObject("config");
-    	        
-    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(OtoConfiguration.VERTX_OPTIONS_KEY, null);
-    	        
-    	        Future<Void> initFuture = Future.future();
-    	        srvRunner.init(innerConfig, clusterCfg, vertxOptionsCfg, initFuture);
-    	        initFuture.setHandler(ret -> {
-    	    		if(ret.succeeded()){   
-    	    			try{
-    		    			Future<Void> runFuture = Future.future();
-    		    			//运行
-    		    			srvRunner.run(runFuture);
-    		    			runFuture.setHandler(runRet -> {
-    		            		if(runRet.succeeded()){   
-    		            			System.out.println("running...");	            			
-    		            		}else{
-    		            			Throwable err = runRet.cause();
-    		            			System.err.println("run failed" + err);
-    		            		}
-    		               	});	               	
-    	    			}catch(Throwable t){        			
-    	        			System.err.println("run failed" + t);
-    	        		}
-    	    		}else{
-    	    			Throwable err = ret.cause();
-    	    			System.err.println("initialize failed" + err);
-    	    		}	
-        			
-    			});	    	        
-    	        
-    	    } else {
-    	        System.err.println(srvCfgFile + "file not found" + result.cause());    	        
-    	    }	
+		String zkCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + "zookeeper.json";	
+		
+		Vertx.vertx().fileSystem().readFile(zkCfgFilePath, zkResult -> {
+    	    if (zkResult.succeeded()) {
+    	    	
+    	    	String zfFileContent = zkResult.result().toString(); 
+    	        System.out.println(zfFileContent);
+    	        JsonObject zkCfg = new JsonObject(zfFileContent);
+		
+				String cfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + srvCfgFile;
+				Vertx.vertx().fileSystem().readFile(cfgFilePath, result -> {
+		    	    if (result.succeeded()) {
+		    	    	String fileContent = result.result().toString(); 
+		    	        System.out.println(fileContent);
+		    	        JsonObject srvCfg = new JsonObject(fileContent);
+		    	        
+		    	        JsonObject innerConfig = srvCfg.getJsonObject("options").getJsonObject("config");
+		    	        
+		    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(OtoConfiguration.VERTX_OPTIONS_KEY, null);
+		    	        
+		    	        Future<Void> initFuture = Future.future();
+		    	        srvRunner.init(innerConfig, zkCfg, vertxOptionsCfg, initFuture);
+		    	        initFuture.setHandler(ret -> {
+		    	    		if(ret.succeeded()){   
+		    	    			try{
+		    		    			Future<Void> runFuture = Future.future();
+		    		    			//运行
+		    		    			srvRunner.run(runFuture);
+		    		    			runFuture.setHandler(runRet -> {
+		    		            		if(runRet.succeeded()){   
+		    		            			System.out.println("running...");	            			
+		    		            		}else{
+		    		            			Throwable err = runRet.cause();
+		    		            			System.err.println("run failed" + err);
+		    		            		}
+		    		               	});	               	
+		    	    			}catch(Throwable t){        			
+		    	        			System.err.println("run failed" + t);
+		    	        		}
+		    	    		}else{
+		    	    			Throwable err = ret.cause();
+		    	    			System.err.println("initialize failed" + err);
+		    	    		}	
+		        			
+		    			});	    	        
+		    	        
+		    	    } else {
+		    	        System.err.println(srvCfgFile + "file not found" + result.cause());    	        
+		    	    }	
+				});
+    	    }else{    	    	
+    	    	System.err.println("zookeeper.json found" + zkResult.cause());    	
+    	    }
 		});
 
 	}
@@ -1357,88 +1367,113 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
     	runtime.addShutdownHook(thread);  
 
 		
-		Config clusterCfg = config(logFile);
+		config(logFile);
 		
-		String cfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + srvCfgFile;			
-			
-		Vertx.vertx().fileSystem().readFile(cfgFilePath, result -> {
-    	    if (result.succeeded()) {
-    	    	String fileContent = result.result().toString(); 
-    	        System.out.println(fileContent);
-    	        JsonObject srvCfg = new JsonObject(fileContent);
-    	        
-    	        JsonObject innerConfig = srvCfg.getJsonObject("options").getJsonObject("config");
-    	        
-    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(OtoConfiguration.VERTX_OPTIONS_KEY, null);
-    	        
-    	        Future<Void> initFuture = Future.future();
-    	        srvRunner.init(innerConfig, clusterCfg, vertxOptionsCfg, initFuture);
-    	        initFuture.setHandler(ret -> {
-    	    		if(ret.succeeded()){   
-    	    			try{
-    		    			//运行
-    		    			srvRunner.run(runFuture);
-
-    	    			}catch(Throwable t){        			
-    	        			System.err.println("run failed" + t);
-    	        		}
-    	    		}else{
-    	    			Throwable err = ret.cause();
-    	    			System.err.println("initialize failed" + err);
-    	    		}	
-        			
-    			});	    	        
-    	        
-    	    } else {
-    	        System.err.println(srvCfgFile + "file not found" + result.cause());    	        
-    	    }	
+		String zkCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + "zookeeper.json";	
+		
+		Vertx.vertx().fileSystem().readFile(zkCfgFilePath, zkResult -> {
+    	    if (zkResult.succeeded()) {
+    	    	
+    	    	String zfFileContent = zkResult.result().toString(); 
+    	        System.out.println(zfFileContent);
+    	        JsonObject zkCfg = new JsonObject(zfFileContent);
+		
+				String cfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + srvCfgFile;
+				Vertx.vertx().fileSystem().readFile(cfgFilePath, result -> {
+		    	    if (result.succeeded()) {
+		    	    	String fileContent = result.result().toString(); 
+		    	        System.out.println(fileContent);
+		    	        JsonObject srvCfg = new JsonObject(fileContent);
+		    	        
+		    	        JsonObject innerConfig = srvCfg.getJsonObject("options").getJsonObject("config");
+		    	        
+		    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(OtoConfiguration.VERTX_OPTIONS_KEY, null);
+		    	        
+		    	        Future<Void> initFuture = Future.future();
+		    	        srvRunner.init(innerConfig, zkCfg, vertxOptionsCfg, initFuture);
+		    	        initFuture.setHandler(ret -> {
+		    	    		if(ret.succeeded()){   
+		    	    			try{
+		    		    			//运行
+		    		    			srvRunner.run(runFuture);
+		
+		    	    			}catch(Throwable t){        			
+		    	        			System.err.println("run failed" + t);
+		    	        		}
+		    	    		}else{
+		    	    			Throwable err = ret.cause();
+		    	    			System.err.println("initialize failed" + err);
+		    	    		}	
+		        			
+		    			});	    	        
+		    	        
+		    	    } else {
+		    	        System.err.println(srvCfgFile + "file not found" + result.cause());    	        
+		    	    }	
+				});
+    	    }else{
+    	    	System.err.println("zookeeper.json found" + zkResult.cause());    	
+    	    }
 		});
 
 	}	
 	
 	public static void createVertxInstance(String logFile, String srvCfgFile, Future<Vertx> createFuture){		
 		
-		Config clusterCfg = config(logFile);
+		config(logFile);
 		
-		String cfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + srvCfgFile;			
-			
-		Vertx.vertx().fileSystem().readFile(cfgFilePath, result -> {
-    	    if (result.succeeded()) {
-    	    	String fileContent = result.result().toString(); 
-    	        System.out.println(fileContent);
-    	        JsonObject srvCfg = new JsonObject(fileContent);
-    	        
-    	        JsonObject innerConfig = srvCfg.getJsonObject("options").getJsonObject("config");
-    	        
-    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(OtoConfiguration.VERTX_OPTIONS_KEY, null);
-
-    			VertxOptions options = OtoCloudServiceImpl.createVertxOptions(srvCfg, clusterCfg, vertxOptionsCfg);		
-    			// 创建群集Vertx运行时环境
-    			Vertx.clusteredVertx(options, res -> {
-    				// 运行时创建完后初始化
-    				if (res.succeeded()) {
-    					// 创建vertx实例
-    					Vertx newVertx = res.result();    					
-    					createFuture.complete(newVertx);
-    				} else {
-    					Throwable err = res.cause();
-    					createFuture.fail(err);
-    	    	    }
-    			});		
-    	        
-    	        
-    	    } else {
-    	        System.err.println(srvCfgFile + "file not found" + result.cause());    	     
-    	        createFuture.fail(result.cause());
-    	    }	
-		});
+		String zkCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + "zookeeper.json";	
+		
+		Vertx.vertx().fileSystem().readFile(zkCfgFilePath, zkResult -> {
+    	    if (zkResult.succeeded()) {
+    	    	
+    	    	String zfFileContent = zkResult.result().toString(); 
+    	        System.out.println(zfFileContent);
+    	        JsonObject zkCfg = new JsonObject(zfFileContent);
+		
+				String cfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + srvCfgFile;
+				Vertx.vertx().fileSystem().readFile(cfgFilePath, result -> {
+		    	    if (result.succeeded()) {
+		    	    	String fileContent = result.result().toString(); 
+		    	        System.out.println(fileContent);
+		    	        JsonObject srvCfg = new JsonObject(fileContent);
+		    	        
+		    	        JsonObject innerConfig = srvCfg.getJsonObject("options").getJsonObject("config");
+		    	        
+		    	        JsonObject vertxOptionsCfg = innerConfig.getJsonObject(OtoConfiguration.VERTX_OPTIONS_KEY, null);
+		
+		    			VertxOptions options = OtoCloudServiceImpl.createVertxOptions(srvCfg, zkCfg, vertxOptionsCfg);		
+		    			// 创建群集Vertx运行时环境
+		    			Vertx.clusteredVertx(options, res -> {
+		    				// 运行时创建完后初始化
+		    				if (res.succeeded()) {
+		    					// 创建vertx实例
+		    					Vertx newVertx = res.result();    					
+		    					createFuture.complete(newVertx);
+		    				} else {
+		    					Throwable err = res.cause();
+		    					createFuture.fail(err);
+		    	    	    }
+		    			});		
+		    	        
+		    	        
+		    	    } else {
+		    	        System.err.println(srvCfgFile + "file not found" + result.cause());    	     
+		    	        createFuture.fail(result.cause());
+		    	    }	
+				});
+    	    }else{
+    	    	System.err.println("zookeeper.json not found" + zkResult.cause());    	     
+    	        createFuture.fail(zkResult.cause());
+    	    }
+		});    	    
 
 
 
 	}
 	
 	
-	private static Config config(String logConfigFile) {
+	private static void config(String logConfigFile) {
 		//logging配置
 		String logFile = "log4j2.xml";
 		if(logConfigFile != null && !logConfigFile.isEmpty()){
@@ -1449,7 +1484,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		System.setProperty("log4j.configurationFile", logCfgFilePath);		
 		System.setProperty(LoggerFactory.LOGGER_DELEGATE_FACTORY_CLASS_NAME, "io.vertx.core.logging.SLF4JLogDelegateFactory");
 		
-		return loadClusterConfig();
+		//return loadClusterConfig();
 	}
 
 	
@@ -1472,7 +1507,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 		}
     }*/
 	
-	public static Config loadClusterConfig() {
+/*	public static Config loadClusterConfig() {
 		//bus群集配置
 		try{	
 			String clusterCfgFilePath = OtoCloudDirectoryHelper.getConfigDirectory() + OtoConfiguration.CLUSTER_CFG_FILE; //hazelcast.xml";
@@ -1483,6 +1518,6 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
 			return null;
 			//e.printStackTrace();
 		}
-    }
+    }*/
 
 }
