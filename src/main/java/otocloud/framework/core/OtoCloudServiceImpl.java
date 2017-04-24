@@ -61,7 +61,7 @@ public abstract class OtoCloudServiceImpl extends OtoCloudServiceLifeCycleImpl i
     protected JsonObject srvCfg;
 	protected Vertx vertxInstance;	
 	protected JdbcDataSource sysDataSource;
-	private SessionStore sessionStore;
+	protected SessionStore sessionStore;
 	protected boolean isolationVertx = false;
 	protected Map<String, Deployment> components;	
 	protected OtoCloudLogger logger;	

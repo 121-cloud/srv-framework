@@ -28,6 +28,7 @@ import otocloud.framework.core.OtoCloudEventHandlerRegistry;
 import otocloud.framework.core.OtoCloudServiceForVerticleImpl;
 import otocloud.framework.core.VertxInstancePool;
 import otocloud.framework.core.factory.OtoCloudServiceFactory;
+import otocloud.persistence.dao.JdbcDataSource;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;

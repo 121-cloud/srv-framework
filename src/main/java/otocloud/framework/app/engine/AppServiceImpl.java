@@ -33,6 +33,8 @@ import otocloud.framework.core.HandlerDescriptor;
 import otocloud.framework.core.OtoCloudComponent;
 import otocloud.framework.core.OtoCloudEventHandlerRegistry;
 import otocloud.framework.core.OtoCloudServiceImpl;
+import otocloud.framework.core.session.SessionStore;
+import otocloud.persistence.dao.JdbcDataSource;
 
 
 /**
@@ -84,6 +86,9 @@ public abstract class AppServiceImpl extends OtoCloudServiceImpl implements AppS
 	public void configService() {
 		super.configService();
 		
+		this.appId = appServiceEngine.getAppId();
+		this.appVersion = appServiceEngine.getAppVersion();
+		
 		//setServiceId(appServiceEngine.getServiceId());
 		setServiceName(appServiceEngine.getRealServiceName());
 		//setServiceName(appContext.getAccount());
@@ -121,6 +126,14 @@ public abstract class AppServiceImpl extends OtoCloudServiceImpl implements AppS
 	@Override
 	public WebServer createWebServer() {
 		return new AppWebServerImpl();
+	}
+	
+	@Override
+	public SessionStore getSessionStore(){
+		if(this.sessionStore == null){
+			this.sessionStore = this.appServiceEngine.getSessionStore();
+		}
+		return this.sessionStore;
 	}
 	
     //创建MongoClient
@@ -186,6 +199,14 @@ public abstract class AppServiceImpl extends OtoCloudServiceImpl implements AppS
     		return otoCloudCDODataSource;
     	return appServiceEngine.getCDODatasource();
     }
+    
+	@Override
+	public JdbcDataSource getSysDatasource(){
+		if(sysDataSource == null){
+			sysDataSource = appServiceEngine.getSysDatasource();
+		}
+		return sysDataSource;
+	}
 	
 	private void appendAppCtx(JsonObject instCfg, AppInstanceContext appInstCtx){
 		JsonObject compCommon = null;
