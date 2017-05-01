@@ -1705,4 +1705,10 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		return getDBTableName(boLatestTb);
 	}
 	
+	public JsonObject buildQueryForMongo(JsonObject query, String bizUnit){
+		String account = this.appActivity.getAppInstContext().getAccount();	
+		JsonObject ret = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, bizUnit, query);
+		return ret;
+	}
+	
 }

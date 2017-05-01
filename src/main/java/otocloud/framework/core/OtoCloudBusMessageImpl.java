@@ -23,12 +23,12 @@ public class OtoCloudBusMessageImpl<T> implements OtoCloudBusMessage<T> {
 	public static String REPLY_ADDR_KEY = "reply_address";
 	public static String MSG_ID_KEY = "msg_session_id";
 	
-	private Message<T> eventMessage;
-	private String msgSessionId;
-	private String replyAddress;
-	private EventBus bus;
-	private boolean asyncReply = false;
-	private JsonObject session;
+	protected Message<T> eventMessage;
+	protected String msgSessionId;
+	protected String replyAddress;
+	protected EventBus bus;
+	protected boolean asyncReply = false;
+	protected JsonObject session;
 	
 	public boolean needAsyncReply() {
 		return asyncReply;
@@ -136,7 +136,8 @@ public class OtoCloudBusMessageImpl<T> implements OtoCloudBusMessage<T> {
 	  private static void setReplyAddress(DeliveryOptions options, String replyAddress, String msgId){
 		  options.addHeader(REPLY_ADDR_KEY, replyAddress);
 		  options.addHeader(MSG_ID_KEY, msgId);
-	  }
+	  }  
+
 	  
 
 	@Override

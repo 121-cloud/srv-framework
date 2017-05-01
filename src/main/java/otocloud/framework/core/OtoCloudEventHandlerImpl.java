@@ -5,6 +5,7 @@ package otocloud.framework.core;
 
 import java.util.List;
 
+import otocloud.common.util.DateTimeUtil;
 import otocloud.framework.common.IgnoreAuthVerify;
 import otocloud.framework.core.session.Session;
 import otocloud.framework.core.session.SessionStore;
@@ -55,6 +56,7 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 		
 		CommandMessage<T> otoMsg = new CommandMessage<T>(msg, bus);	
 		
+		//读取session信息
 		sessionHandle(otoMsg, next->{
 			if(next.succeeded()){
 		    	if(ignoreAuthVerify){
@@ -65,10 +67,7 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 						Future<Boolean> authFuture = Future.future();
 						authFuture.setHandler(authRet->{
 							if(authRet.succeeded()){
-								if(authRet.result()){
-									
-									
-									
+								if(authRet.result()){									
 									toHandle(otoMsg);
 								}else{
 									otoMsg.fail(100, "此用户无访问权限.");
@@ -79,7 +78,8 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 								otoMsg.fail(100, "权限验证失败." + err.getMessage());
 							}					
 						});
-						authVerify(session, authFuture);
+						//权限验证，构建callContxt
+						authVerify(otoMsg, session, authFuture);
 					}else{
 						toHandle(otoMsg);
 					}
@@ -134,7 +134,7 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 		handle(otoMsg);
 	}    
  
-	protected void authVerify(JsonObject session, Future<Boolean> isOk){
+	protected void authVerify(CommandMessage<T> msg, JsonObject session, Future<Boolean> isOk){
     	
 		Long userId = Long.parseLong(session.getString("user_id"));
 		Long acctId = Long.parseLong(session.getString("acct_id"));
@@ -173,11 +173,18 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 														  List<JsonObject> retData = result.getRows();
 														  if(retData.size() > 0){
 															  JsonObject retItem = retData.get(0);
-															  session.put("biz_unit_id", retItem.getLong("d_acct_biz_unit_id"));
-															  session.put("org_role_id", retItem.getLong("d_org_role_id"));															  
-															  session.put("is_global_bu", retItem.getInteger("d_is_global_bu")==1?true:false);
-															  session.put("biz_unit_post_id", retItem.getLong("acct_biz_unit_post_id"));
-															  session.put("app_activity_id", retItem.getLong("d_app_activity_id"));															  
+															  
+															  //构建当前调用上下文
+															  JsonObject callContext = msg.getCallContext();
+															  callContext.put("biz_unit_id", retItem.getLong("d_acct_biz_unit_id"));
+															  callContext.put("org_role_id", retItem.getLong("d_org_role_id"));															  
+															  callContext.put("is_global_bu", retItem.getInteger("d_is_global_bu")==1?true:false);
+															  callContext.put("biz_unit_post_id", retItem.getLong("acct_biz_unit_post_id"));
+															  callContext.put("app_activity_id", retItem.getLong("d_app_activity_id"));			
+															  callContext.put("date_time", DateTimeUtil.now("yyyy-MM-dd hh:mm:ss fff"));
+															  
+															  //加入调用链末端
+															  msg.getCallChain().add(callContext.copy());
 															  
 															  isOk.complete(true);														  
 															  return;
