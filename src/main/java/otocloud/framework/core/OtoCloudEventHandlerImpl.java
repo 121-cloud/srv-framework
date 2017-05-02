@@ -181,7 +181,7 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 															  callContext.put("is_global_bu", retItem.getInteger("d_is_global_bu")==1?true:false);
 															  callContext.put("biz_unit_post_id", retItem.getLong("acct_biz_unit_post_id"));
 															  callContext.put("app_activity_id", retItem.getLong("d_app_activity_id"));			
-															  callContext.put("date_time", DateTimeUtil.now("yyyy-MM-dd hh:mm:ss fff"));
+															  callContext.put("date_time", DateTimeUtil.now("yyyy-MM-dd hh:mm:ss.SSS"));
 															  
 															  //加入调用链末端
 															  msg.getCallChain().add(callContext.copy());
