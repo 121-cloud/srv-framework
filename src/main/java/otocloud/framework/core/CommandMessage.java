@@ -52,7 +52,7 @@ public class CommandMessage<T> extends OtoCloudBusMessageImpl<JsonObject> {
 		JsonObject ret = new JsonObject();
 		JsonArray callChain = getCallChain();
 		ret.put("call_chain", callChain);
-		System.out.println(callChain.toString());
+		System.out.println("call_chain: " + callChain.toString());
 		ret.put("content", content);
 		return ret;
 	}
