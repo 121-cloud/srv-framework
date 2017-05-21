@@ -1014,6 +1014,43 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 		
 	}
 	
+    /**
+     * 查询对象列表（不分页）
+     */
+	public void queryBizDataList(String bizUnit, String bizObjectType, MongoClient mongoCli, Handler<AsyncResult<JsonArray>> next){
+		String account = this.appActivity.getAppInstContext().getAccount();		
+		
+		JsonObject queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, bizUnit, new JsonObject());
+
+		
+		Future<JsonArray> ret = Future.future();
+		ret.setHandler(next);
+		
+		//MongoClient mongoClient = getCurrentDataSource().getMongoClient();
+		MongoClient mongoCliTemp = mongoCli;
+		if(mongoCli == null)
+			mongoCliTemp = getCurrentDataSource().getMongoClient();		
+		MongoClient mongoClient = mongoCliTemp;
+
+		mongoClient.find(getDBTableName(bizObjectType), queryCond, findRet->{
+					if (findRet.succeeded()) {															
+						//ret.complete(findRet.result());
+						
+						JsonArray retArray = new JsonArray(findRet.result());
+						
+						ret.complete(retArray);		
+					} else {
+						Throwable err = findRet.cause();
+						String errMsg = err.getMessage();
+						appActivity.getLogger().error(errMsg, err);
+						ret.fail(err);
+					}
+					
+				});		
+	
+		
+	}
+	
 
     /**
      * 按指定状态查询，支持分页，不区分是否最终状态，只要有过此状态的数据都会查出来
