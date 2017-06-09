@@ -56,6 +56,11 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 		
 		CommandMessage<T> otoMsg = new CommandMessage<T>(msg, bus);	
 		
+		if(ignoreAuthVerify){
+    		toHandle(otoMsg);
+    		return;
+    	}
+		
 		//读取session信息
 		sessionHandle(otoMsg, next->{
 			if(next.succeeded()){

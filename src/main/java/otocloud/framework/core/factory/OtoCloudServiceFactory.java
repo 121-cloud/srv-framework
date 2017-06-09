@@ -10,6 +10,7 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+import otocloud.common.OtoCloudDirectoryHelper;
 import otocloud.framework.core.OtoCloudServiceDepOptions;
 import otocloud.framework.core.OtoCloudServiceImpl;
 import io.vertx.core.DeploymentOptions;
@@ -62,7 +63,11 @@ public class OtoCloudServiceFactory implements VerticleFactory {
 		    	serviceName = null;
 		    }
 		    
-		    File deploymentFile = new File(System.getProperty("user.dir") + "/lib/", fileName);
+		    String jarPath = OtoCloudDirectoryHelper.getLibDirectory();		
+		    
+		    String[] temps = fileName.split(":");
+		    
+		    File deploymentFile = new File(jarPath, temps[1] + "-" + temps[2] + ".jar");		    
 		    
 	    	final List<String> dependencies = new ArrayList<String>();
 	    	try{
@@ -96,7 +101,7 @@ public class OtoCloudServiceFactory implements VerticleFactory {
 	          deploymentOptions.setIsolationGroup(fileName);
 	          //URLClassLoader urlc = new URLClassLoader(new URL[]{deploymentFile.toURI().toURL()}, classLoader);
 	          
-	          resolution.complete();
+	          //resolution.complete();
 	          
 	          loadServiceConfig(serviceName, deploymentOptions, null, resolution);
 	          
