@@ -1018,10 +1018,21 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
      * 查询对象列表（不分页）
      */
 	public void queryBizDataList(String bizUnit, String bizObjectType, MongoClient mongoCli, Handler<AsyncResult<JsonArray>> next){
+		queryBizDataList(bizUnit, bizObjectType, null, mongoCli, next);
+	}
+	
+	
+    /**
+     * 查询对象列表（不分页）
+     */
+	public void queryBizDataList(String bizUnit, String bizObjectType, JsonObject query, MongoClient mongoCli, Handler<AsyncResult<JsonArray>> next){
 		String account = this.appActivity.getAppInstContext().getAccount();		
 		
-		JsonObject queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, bizUnit, new JsonObject());
-
+		if(query == null){
+			query = new JsonObject();
+		}
+		
+		JsonObject queryCond = getCurrentDataSource().getDataPersistentPolicy().getQueryConditionForMongo(account, bizUnit, query);
 		
 		Future<JsonArray> ret = Future.future();
 		ret.setHandler(next);
@@ -1050,6 +1061,8 @@ public abstract class ActionHandlerImpl<T> extends OtoCloudEventHandlerImpl<T> i
 	
 		
 	}
+
+	
 	
 
     /**
