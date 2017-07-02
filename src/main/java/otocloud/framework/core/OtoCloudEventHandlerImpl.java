@@ -7,6 +7,7 @@ import java.util.List;
 
 import otocloud.common.util.DateTimeUtil;
 import otocloud.framework.common.IgnoreAuthVerify;
+import otocloud.framework.common.IgnoreSession;
 import otocloud.framework.core.session.Session;
 import otocloud.framework.core.session.SessionStore;
 import io.vertx.core.AsyncResult;
@@ -31,9 +32,14 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
     public OtoCloudEventHandlerImpl(OtoCloudComponentImpl componentImpl) {
     	this.componentImpl = componentImpl;
     	
-    	IgnoreAuthVerify annotation = (IgnoreAuthVerify) getClass().getAnnotation(IgnoreAuthVerify.class);
-    	if(annotation != null){
-    		ignoreAuthVerify = true;
+    	IgnoreAuthVerify ignoreAuthVerifyAnno = (IgnoreAuthVerify) getClass().getAnnotation(IgnoreAuthVerify.class);
+    	if(ignoreAuthVerifyAnno != null){
+    		this.ignoreAuthVerify = true;
+    	}
+    	
+    	IgnoreSession ignoreSessionAnno = (IgnoreSession) getClass().getAnnotation(IgnoreSession.class);
+    	if(ignoreSessionAnno != null){
+    		this.ignoreSession = true;
     	}
     	
     }    
@@ -56,15 +62,15 @@ public abstract class OtoCloudEventHandlerImpl<T> extends OtoCloudEventHandlerBa
 		
 		CommandMessage<T> otoMsg = new CommandMessage<T>(msg, bus);	
 		
-		if(ignoreAuthVerify){
-    		toHandle(otoMsg);
-    		return;
-    	}
+		if(this.ignoreSession){
+			toHandle(otoMsg);
+			return;
+		}
 		
 		//读取session信息
 		sessionHandle(otoMsg, next->{
 			if(next.succeeded()){
-		    	if(ignoreAuthVerify){
+		    	if(this.ignoreAuthVerify){
 		    		toHandle(otoMsg);
 		    	}else{		
 					JsonObject session = otoMsg.getSession();

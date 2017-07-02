@@ -19,6 +19,8 @@ public abstract class OtoCloudEventHandlerBase<T> implements OtoCloudEventHandle
 	protected HandlerDescriptor hanlderDesc;
 	
 	protected Boolean ignoreAuthVerify = false;
+	
+	protected Boolean ignoreSession = false;
 
 
 	//protected MessageConsumer<T> consumer;	
